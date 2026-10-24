@@ -350,10 +350,15 @@ func (c orgbController) ColorsFor(t ThemeDef, brightness int) []RGB {
 	}
 	// Keyboards lit in zones rather than per key (e.g. SteelSeries Apex 3:
 	// "LED 0".."LED 7") get the livery's accent columns instead of accent keys.
-	zoneAccent := map[int]bool{}
+	zoneAccent := map[int]bool{}    // accent columns 1..10
+	zoneAccentLED := map[int]bool{} // LEDs under accent key clusters
 	if c.Type == orgbTypeKeyboard && !c.hasKeyNames() {
-		for _, z := range t.GMBKAccent {
-			zoneAccent[z] = true
+		if leds := c.zoneLEDsFor(t.AccentKeys); leds != nil {
+			zoneAccentLED = leds
+		} else if t.AccentKeys != "function-row" {
+			for _, z := range t.GMBKAccent {
+				zoneAccent[z] = true
+			}
 		}
 	}
 	out := make([]RGB, len(c.LEDNames))
@@ -365,7 +370,7 @@ func (c orgbController) ColorsFor(t ThemeDef, brightness int) []RGB {
 		lname := strings.ToLower(name)
 		switch c.Type {
 		case orgbTypeKeyboard:
-			if accents[lname] || zoneAccent[accentColumn(xs[i])] {
+			if accents[lname] || zoneAccent[accentColumn(xs[i])] || zoneAccentLED[i] {
 				col = accent
 			}
 		case orgbTypeMouse:
@@ -387,6 +392,42 @@ func (c orgbController) hasKeyNames() bool {
 		}
 	}
 	return false
+}
+
+// Where WASD and the arrow keys sit, as the middle of each cluster across the
+// keyboard's width (0..1). Tenkeyless boards are 18.25 key-widths wide, full
+// size ones 22.5; zone-lit boards split that width into equal zones.
+var clusterX = map[string]map[bool]float64{
+	"wasd":   {true: 3.06 / 18.25, false: 3.06 / 22.5},
+	"arrows": {true: 16.75 / 18.25, false: 16.75 / 22.5},
+}
+
+// zoneLEDsFor returns the zone LEDs that sit under the theme's accent keys
+// (nil when the accent set isn't WASD/arrows).
+func (c orgbController) zoneLEDsFor(accentKeys string) map[int]bool {
+	var clusters []string
+	switch accentKeys {
+	case "wasd-arrows":
+		clusters = []string{"wasd", "arrows"}
+	case "wasd", "arrows":
+		clusters = []string{accentKeys}
+	default:
+		return nil
+	}
+	n := len(c.LEDNames)
+	if n < 3 {
+		return nil
+	}
+	tkl := strings.Contains(strings.ToUpper(c.Name), "TKL") || n <= 8
+	out := map[int]bool{}
+	for _, cl := range clusters {
+		z := int(clusterX[cl][tkl] * float64(n))
+		if z >= n {
+			z = n - 1
+		}
+		out[z] = true
+	}
+	return out
 }
 
 // accentColumn maps a horizontal position 0..1 onto the 1..10 accent columns

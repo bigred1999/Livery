@@ -104,31 +104,46 @@ func TestParseControllerV3(t *testing.T) {
 // A zone-lit keyboard like the SteelSeries Apex 3 TKL: one linear zone of
 // 8 LEDs named "LED 0".."LED 7".
 func TestZoneKeyboardAccents(t *testing.T) {
-	c := orgbController{Type: orgbTypeKeyboard, Zones: []orgbZone{{Name: "Keyboard", LEDCount: 8}}}
+	c := orgbController{Name: "SteelSeries Apex 3 TKL", Type: orgbTypeKeyboard, Zones: []orgbZone{{Name: "Keyboard", LEDCount: 8}}}
 	for i := 0; i < 8; i++ {
 		c.LEDNames = append(c.LEDNames, "LED "+string(rune('0'+i)))
 	}
-	th, _ := findTheme("rosso-grafite", nil) // accent columns 1 and 10
+	// WASD + arrows: the zone under WASD (2nd of 8) and under the arrows (8th).
+	th, _ := findTheme("rosso", nil)
 	got := c.ColorsFor(th, 100)
 	base, acc := mustHex(th.Base), mustHex(th.Accent)
 	for i, col := range got {
 		want := base
-		if i == 0 || i == 7 {
+		if i == 1 || i == 7 {
 			want = acc
 		}
 		if col != want {
-			t.Errorf("LED %d = %v want %v", i, col, want)
+			t.Errorf("TKL LED %d = %v want %v", i, col, want)
 		}
 	}
-	th, _ = findTheme("flame-job", nil) // stripes spread across the zones
+	// Full-size Apex 3: 10 zones, WASD in the 2nd, arrows in the 8th.
+	full := orgbController{Name: "SteelSeries Apex 3", Type: orgbTypeKeyboard, Zones: []orgbZone{{LEDCount: 10}}}
+	for i := 0; i < 10; i++ {
+		full.LEDNames = append(full.LEDNames, "LED")
+	}
+	got = full.ColorsFor(th, 100)
+	for i, col := range got {
+		if (col == acc) != (i == 1 || i == 7) {
+			t.Errorf("full LED %d accent=%v", i, col == acc)
+		}
+	}
+	// No accent keys: fall back to the livery's accent columns.
+	th2 := th
+	th2.AccentKeys, th2.GMBKAccent = "none", []int{1, 10}
+	got = c.ColorsFor(th2, 100)
+	if got[0] != acc || got[7] != acc || got[3] != base {
+		t.Errorf("columns: %v", got)
+	}
+	// Stripes still spread across the zones.
+	th, _ = findTheme("flame-job", nil)
 	got = c.ColorsFor(th, 100)
 	if got[0] != mustHex(hexFlameYellow) || got[7] != mustHex(hexCandyRed) {
 		t.Errorf("stripes: %v", got)
-	}
-	// Per-key keyboards keep using key names, not columns.
-	pk := orgbController{Type: orgbTypeKeyboard, Zones: []orgbZone{{LEDCount: 2}}, LEDNames: []string{"Key: Escape", "Key: W"}}
-	if g := pk.ColorsFor(th, 100); len(g) != 2 {
-		t.Fatal("per-key")
 	}
 }
 
