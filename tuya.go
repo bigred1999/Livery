@@ -562,7 +562,7 @@ func (d *TuyaDevice) Status() (map[string]any, error) {
 		var r struct {
 			DevID string         `json:"devId"`
 			DPS   map[string]any `json:"dps"`
-			Data struct {
+			Data  struct {
 				DPS map[string]any `json:"dps"`
 			} `json:"data"`
 		}

@@ -102,6 +102,7 @@ func runBackground() {
 
 	go startPanel()
 	go watchdog()
+	go updateLoop(stopCh)
 
 	t, s := currentTheme()
 	logf("background mode started (theme %s, %s, %d%%)", t.Name, s.Effect, s.Brightness)

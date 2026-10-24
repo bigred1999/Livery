@@ -141,3 +141,18 @@ func TestTuyaSign(t *testing.T) {
 		t.Errorf("request sign %s", got)
 	}
 }
+
+func TestNewerVersion(t *testing.T) {
+	for _, c := range []struct {
+		a, b string
+		want bool
+	}{{"v1.10.0", "1.9.2", true}, {"1.4.0", "1.4.0", false}, {"v1.3.9", "1.4.0", false}, {"2", "1.9.9", true}} {
+		if newerVersion(c.a, c.b) != c.want {
+			t.Errorf("%s > %s should be %v", c.a, c.b, c.want)
+		}
+	}
+	m := shaLine.FindStringSubmatch("SHA-256: `fb8f23ff03d43c15d6131b17aaa31c98b4853593875efb29175a2c0717a4a476`  Livery-Setup-1.2.2.exe")
+	if m == nil || m[2] != "Livery-Setup-1.2.2.exe" {
+		t.Errorf("sha line not parsed: %v", m)
+	}
+}

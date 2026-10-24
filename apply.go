@@ -25,7 +25,11 @@ type Settings struct {
 	Brightness int    `json:"brightness"` // 5..100
 	Effect     string `json:"effect"`     // static | breathe
 	Speed      int    `json:"speed"`      // 1 (slow) .. 10 (fast)
+	// UpdateCheck turns the daily check for new releases on GitHub on or off (default on).
+	UpdateCheck *bool `json:"updateCheck,omitempty"`
 }
+
+func (s Settings) AutoUpdateCheck() bool { return s.UpdateCheck == nil || *s.UpdateCheck }
 
 func (s *Settings) normalize() {
 	if s.Brightness < 5 || s.Brightness > 100 {

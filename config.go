@@ -10,10 +10,11 @@ import (
 )
 
 type Config struct {
-	Settings     Settings   `json:"settings"`
-	Custom       []ThemeDef `json:"customThemes"`
-	AppliedPower string     `json:"appliedPowerButton,omitempty"`
-	Tuya         TuyaConfig `json:"smartBulbs,omitempty"`
+	Settings     Settings        `json:"settings"`
+	Custom       []ThemeDef      `json:"customThemes"`
+	AppliedPower string          `json:"appliedPowerButton,omitempty"`
+	Tuya         TuyaConfig      `json:"smartBulbs,omitempty"`
+	Screen       *ScreenSettings `json:"keyboardScreen,omitempty"`
 }
 
 func appliedPower() string { return loadConfig().AppliedPower }

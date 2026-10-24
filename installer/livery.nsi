@@ -35,6 +35,7 @@ VIAddVersionKey "LegalCopyright" "MIT License"
 !include "LogicLib.nsh"
 !include "Sections.nsh"
 !include "x64.nsh"
+!include "FileFunc.nsh"
 
 !define MUI_ICON "livery.ico"
 !define MUI_UNICON "livery.ico"
@@ -152,6 +153,17 @@ LangString DESC_Pawn ${LANG_ENGLISH} "Driver OpenRGB needs on Windows to reach R
   !insertmacro MUI_DESCRIPTION_TEXT ${SecOpenRGB} $(DESC_ORGB)
   !insertmacro MUI_DESCRIPTION_TEXT ${SecPawnIO} $(DESC_Pawn)
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
+
+; Updates started from inside Livery pass /S /RELAUNCH: start Livery again
+; in the background once the new files are in place.
+Function .onInstSuccess
+  ${GetParameters} $R0
+  ClearErrors
+  ${GetOptions} $R0 "/RELAUNCH" $R1
+  ${IfNot} ${Errors}
+    Exec '"$INSTDIR\livery.exe" run'
+  ${EndIf}
+FunctionEnd
 
 Function .onInit
   ${IfNot} ${RunningX64}

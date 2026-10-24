@@ -23,6 +23,27 @@ type stateResponse struct {
 	Status    DeviceStatus `json:"status"`
 	Autostart bool         `json:"autostart"`
 	Bulbs     tuyaView     `json:"bulbs"`
+	Screen    screenView   `json:"screen"`
+	Update    updateInfo   `json:"update"`
+}
+
+type screenView struct {
+	Settings ScreenSettings `json:"settings"`
+	Running  bool           `json:"running"`
+	Done     int            `json:"done"`
+	Total    int            `json:"total"`
+	Result   string         `json:"result"`
+}
+
+func buildScreenView(c Config) screenView {
+	v := screenView{Settings: ScreenSettings{Model: "coupe", Body: "#FF6A00", Accent: "#00AAFF", Glow: "#00AAFF"}}
+	if c.Screen != nil {
+		v.Settings = *c.Screen
+	}
+	screenUpload.Lock()
+	v.Running, v.Done, v.Total, v.Result = screenUpload.running, screenUpload.done, screenUpload.total, screenUpload.result
+	screenUpload.Unlock()
+	return v
 }
 
 func buildState() stateResponse {
@@ -36,6 +57,8 @@ func buildState() stateResponse {
 		Status:    getStatus(),
 		Autostart: autostartEnabled(),
 		Bulbs:     buildTuyaView(cfg),
+		Screen:    buildScreenView(cfg),
+		Update:    getUpdateInfo(),
 	}
 }
 
@@ -336,6 +359,47 @@ func startPanel() {
 	mux.HandleFunc("/api/bulbs/forget", guard(func(w http.ResponseWriter, r *http.Request) {
 		updateConfig(func(c *Config) { c.Tuya = TuyaConfig{} })
 		logf("smart bulbs: setup removed")
+		writeJSON(w, buildState())
+	}))
+	// Keyboard screen animations (Ajazz AK820 Pro).
+	mux.HandleFunc("/api/screen/preview", guard(func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		sc := ScreenSettings{Model: q.Get("model"), Body: q.Get("body"), Accent: q.Get("accent"), Glow: q.Get("glow")}
+		b, err := ScreenPreviewPNG(sc)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Cache-Control", "max-age=3600")
+		w.Write(b)
+	}))
+	mux.HandleFunc("/api/screen/upload", guard(func(w http.ResponseWriter, r *http.Request) {
+		var sc ScreenSettings
+		if err := json.NewDecoder(r.Body).Decode(&sc); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		if err := sc.normalize(); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		updateConfig(func(c *Config) { c.Screen = &sc })
+		if err := startScreenUpload(sc); err != nil {
+			http.Error(w, err.Error(), 409)
+			return
+		}
+		writeJSON(w, buildState())
+	}))
+	mux.HandleFunc("/api/update/check", guard(func(w http.ResponseWriter, r *http.Request) {
+		checkForUpdate()
+		writeJSON(w, buildState())
+	}))
+	mux.HandleFunc("/api/update/install", guard(func(w http.ResponseWriter, r *http.Request) {
+		if err := installUpdate(); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
 		writeJSON(w, buildState())
 	}))
 	mux.HandleFunc("/api/probe", guard(probeHandler))

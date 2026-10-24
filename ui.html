@@ -42,6 +42,8 @@
   [hidden] { display: none !important; }
   .hint { margin: 16px 0 0; padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--red); border-radius: 10px; background: var(--surface); color: var(--muted); font-size: 14px; line-height: 1.5; }
   .hint a { color: inherit; }
+  .hint.update { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; color: var(--text); border-left-color: var(--ok); }
+  .hint.update[hidden] { display: none; }
   .cats { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
   .cats button { border: 1px solid var(--border); background: var(--surface); color: var(--muted); padding: 7px 14px; border-radius: 999px; font: inherit; font-size: 13px; cursor: pointer; letter-spacing: 0.03em; }
   .cats button:hover { border-color: #44444d; color: var(--text, #eee); }
@@ -85,6 +87,10 @@
   .zones button.on { background: var(--red); border-color: var(--red); color: #fff; }
   .stripes { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .stripes input[type=color] { width: 34px; height: 28px; border: 0; background: none; padding: 0; cursor: pointer; }
+  .screenbox { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
+  #scrPrev { width: 256px; height: 256px; image-rendering: pixelated; border-radius: 12px; border: 1px solid var(--border); background: #000; }
+  .screenctl { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
+  .scrcolors { display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); gap: 10px; }
   .bulbform { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; align-items: end; margin-top: 14px; }
   .bulbform input[type=text], .bulbform input[type=password] { width: 100%; box-sizing: border-box; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; font: inherit; }
   .steps { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: 14px; line-height: 1.7; }
@@ -117,6 +123,7 @@
     <div class="chips" id="chips"></div>
   </header>
 
+  <div class="hint update" id="updBanner" hidden></div>
   <p class="hint" id="orgbHint" hidden></p>
   <h2>Livery</h2>
   <div class="cats" id="cats"></div>
@@ -175,6 +182,27 @@
     </div>
   </div>
 
+  <section id="screenSection" hidden>
+  <h2>Keyboard screen</h2>
+  <div class="panel screenbox">
+    <canvas id="scrPrev" width="128" height="128"></canvas>
+    <div class="screenctl">
+      <div class="seg" id="scrModel">
+        <button data-m="coupe">Street coupe</button><button data-m="sedan">Tuner sedan</button><button data-m="bike">Superbike</button>
+      </div>
+      <div class="scrcolors">
+        <label class="colorfield"><span>Paint</span><input type="color" id="scrBody"></label>
+        <label class="colorfield"><span>Accent</span><input type="color" id="scrAccent"></label>
+        <label class="colorfield"><span>Neon</span><input type="color" id="scrGlow"></label>
+      </div>
+      <div class="editor-actions">
+        <button class="btn primary" id="scrSend">Send to keyboard screen</button>
+        <span class="muted" id="scrStatus">Takes about 20 seconds. Keep the keyboard plugged in until it finishes.</span>
+      </div>
+    </div>
+  </div>
+  </section>
+
   <h2>Smart bulbs</h2>
   <div class="panel" id="bulbPanel"></div>
 
@@ -185,6 +213,13 @@
       <div class="muted">Keeps your livery on after reboots, sleep and when the mouse wakes up. Adds one entry to your Windows startup apps.</div>
     </div>
     <label class="switch"><input type="checkbox" id="autostart"><span></span></label>
+  </div>
+  <div class="panel toggle" style="margin-top:12px">
+    <div>
+      <div>Check for updates</div>
+      <div class="muted">Once a day Livery asks GitHub whether a newer release exists, and offers to install it here. Nothing is installed without your click. <a href="#" id="updCheckNow">Check now</a></div>
+    </div>
+    <label class="switch"><input type="checkbox" id="updToggle"><span></span></label>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -320,7 +355,78 @@ function render() {
   sf.value = keep && list.some((t) => t.id === keep) ? keep : s.themeId;
   if (!draft) loadDraft(sf.value);
   renderBulbs();
+  renderScreen();
+  renderUpdate();
 }
+
+// --- updates ----------------------------------------------------------------------
+let seenVersion = null;
+function renderUpdate() {
+  if (seenVersion && seenVersion !== state.version) { location.reload(); return; } // new version took over
+  seenVersion = state.version;
+  const u = state.update || {}, b = $("#updBanner");
+  $("#updToggle").checked = state.settings.updateCheck !== false;
+  if (u.installing) { b.hidden = false; b.innerHTML = `<b>Installing Livery ${esc(u.version)}…</b><span class="muted">The panel reloads when it's done.</span>`; return; }
+  if (!u.available) { b.hidden = !u.error; b.innerHTML = u.error ? `<span>Update: ${esc(u.error)}</span>` : ""; return; }
+  b.hidden = false;
+  b.innerHTML = `<b>Livery ${esc(u.version)} is available.</b>
+    <button class="btn primary small" id="updInstall">Install update</button>
+    <a href="${esc(u.url)}" target="_blank" rel="noopener">What's new</a>
+    <span class="muted">Your settings and liveries are kept.</span>`;
+}
+$("#updBanner").addEventListener("click", (e) => {
+  if (e.target.id !== "updInstall") return;
+  run(async () => { state = await api("/api/update/install", {}); render(); toast("Installing the update…"); });
+});
+$("#updToggle").addEventListener("change", (e) => applySettings({ updateCheck: e.target.checked }, e.target.checked ? "Will check for updates" : "Update checks off"));
+$("#updCheckNow").addEventListener("click", (e) => {
+  e.preventDefault();
+  run(async () => { state = await api("/api/update/check", {}); render(); toast(state.update.available ? `Livery ${state.update.version} is available` : "You're on the latest version"); });
+});
+
+// --- keyboard screen (Ajazz AK820 Pro) ------------------------------------------
+let scr = null, scrImg = null, scrKey = "", scrFrame = 0;
+function scrSettings() { return { model: scr.model, body: $("#scrBody").value, accent: $("#scrAccent").value, glow: $("#scrGlow").value }; }
+function loadScrPreview() {
+  const s = scrSettings(), key = JSON.stringify(s);
+  if (key === scrKey) return;
+  scrKey = key;
+  const img = new Image();
+  img.onload = () => { if (scrKey === key) scrImg = img; };
+  img.src = "/api/screen/preview?" + new URLSearchParams(s);
+}
+function renderScreen() {
+  const st = state.status || {}, v = state.screen || {};
+  const has = st.ajazz && st.ajazz !== "not connected";
+  $("#screenSection").hidden = !has;
+  if (!has) return;
+  if (!scr) {
+    scr = Object.assign({}, v.settings);
+    $("#scrBody").value = scr.body; $("#scrAccent").value = scr.accent; $("#scrGlow").value = scr.glow;
+  }
+  document.querySelectorAll("#scrModel button").forEach((b) => b.classList.toggle("on", b.dataset.m === scr.model));
+  $("#scrSend").disabled = v.running;
+  $("#scrStatus").textContent = v.running ? (v.total ? `Uploading… ${Math.round(100 * v.done / v.total)}%` : "Getting the screen ready…")
+    : v.result === "ok" ? "On your keyboard now."
+    : v.result ? v.result.replace(/^error: /, "Didn't finish: ")
+    : "Takes about 20 seconds. Keep the keyboard plugged in until it finishes.";
+  loadScrPreview();
+}
+setInterval(() => {
+  if (!scrImg || $("#screenSection").hidden) return;
+  const n = Math.max(1, scrImg.width / 128);
+  scrFrame = (scrFrame + 1) % n;
+  const ctx = $("#scrPrev").getContext("2d");
+  ctx.drawImage(scrImg, scrFrame * 128, 0, 128, 128, 0, 0, 128, 128);
+}, 80);
+$("#scrModel").addEventListener("click", (e) => { const m = e.target.dataset.m; if (!m || !scr) return; scr.model = m; renderScreen(); });
+["#scrBody", "#scrAccent", "#scrGlow"].forEach((id) => $(id).addEventListener("change", loadScrPreview));
+$("#scrSend").addEventListener("click", () => run(async () => {
+  state = await api("/api/screen/upload", scrSettings()); render(); toast("Sending to the keyboard screen…");
+  const poll = setInterval(async () => {
+    try { state = await api("/api/state"); render(); if (!state.screen.running) clearInterval(poll); } catch (e) { clearInterval(poll); }
+  }, 1000);
+}));
 
 // --- smart bulbs (Tuya / Feit Electric) ----------------------------------------
 const REGIONS = [["us", "Americas (West)"], ["us-e", "Americas (East)"], ["eu", "Europe (Central)"], ["eu-w", "Europe (West)"], ["in", "India"], ["sg", "Singapore"], ["cn", "China"]];

@@ -13,6 +13,8 @@ Livery is a single `.exe` with no installer. It runs quietly in the background, 
   - *Endurance*: Powder Blue & Orange, Purple & White, White, Navy & Gold, Endurance Night
   - *Expedition & Off-road*: Expedition Yellow, Desert Raid, Safari Green, Ice Raid
 - **Wi-Fi smart bulbs**: Feit Electric and other Tuya-based bulbs and light strips follow your livery, controlled directly on your home network.
+- **Keyboard screen animations** (Ajazz AK820 Pro): a spinning street coupe, tuner sedan with underglow, or superbike on a neon grid, in colors you pick.
+- **Updates in place**: Livery checks GitHub once a day and installs new releases with one click, keeping your settings.
 - **Build your own**: main and accent colors, accent keys (WASD, arrows, function row), left-to-right stripes, per-light colors for laptop chassis lights and mice.
 - **Brightness** and a synced **Breathe** effect.
 - **Start at login** toggle (a normal per-user startup entry, no admin needed).
@@ -81,6 +83,10 @@ livery.exe install    enable start at login    |  uninstall   disable it and sto
 - Livery only talks to devices with the documented or observed commands listed in the source. A few settings are **persistent**: Alienware power-button/chassis colors are written to the lighting controller's power-state slots, and the GMBK stores its lighting on the keyboard. Livery only rewrites these when the colors actually change.
 - The control panel listens on `127.0.0.1` only, checks the `Host` header, and requires a custom header on every change, so web pages can't drive it.
 - This is hobby software provided as-is (see LICENSE). If Alienware lights ever stop responding, a full shutdown with the charger unplugged resets the lighting controller.
+
+## Updates
+
+Livery checks this repository's latest release once a day (turn it off under *Startup* in the panel). When a newer version exists, the panel offers **Install update**: Livery downloads the release's `Livery-Setup-x.y.z.exe`, checks it against the SHA-256 published with the release, and runs it silently; your settings and liveries are kept and Livery restarts on the new version. Releases need the installer attached plus its SHA-256 (GitHub shows asset digests automatically; a line like `<sha256>  Livery-Setup-x.y.z.exe` in the release notes also works).
 
 ## Building
 
