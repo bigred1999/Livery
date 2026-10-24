@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const version = "1.5.1"
+const version = "1.5.2"
 
 var logw io.Writer = os.Stdout
 

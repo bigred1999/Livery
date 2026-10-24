@@ -282,6 +282,11 @@ var _ = fmt.Sprintf
 // applyOpenRGB paints every OpenRGB device Livery doesn't drive itself.
 // Returns a short status for the control panel.
 func applyOpenRGB(t ThemeDef, s Settings) string {
+	if s.Effect == "breathe" {
+		defer startOpenRGBBreathe(t, s)
+	} else {
+		stopOpenRGBBreathe()
+	}
 	var names []string
 	defer func() { setStatus(func(d *DeviceStatus) { d.OpenRGBDevices = names }) }()
 	o, err := ConnectOpenRGB()

@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"strings"
 	"time"
@@ -168,6 +169,11 @@ func (o *OpenRGB) SetLEDs(dev uint32, colors []RGB) error {
 	if err := o.send(dev, orgbSetCustomMode, nil); err != nil {
 		return err
 	}
+	return o.UpdateLEDs(dev, colors)
+}
+
+// UpdateLEDs sets every LED of a controller already in direct mode.
+func (o *OpenRGB) UpdateLEDs(dev uint32, colors []RGB) error {
 	var b bytes.Buffer
 	binary.Write(&b, binary.LittleEndian, uint32(4+2+4*len(colors)))
 	binary.Write(&b, binary.LittleEndian, uint16(len(colors)))
@@ -342,6 +348,14 @@ func (c orgbController) ColorsFor(t ThemeDef, brightness int) []RGB {
 	for _, n := range accentKeyNames[t.AccentKeys] {
 		accents[strings.ToLower(n)] = true
 	}
+	// Keyboards lit in zones rather than per key (e.g. SteelSeries Apex 3:
+	// "LED 0".."LED 7") get the livery's accent columns instead of accent keys.
+	zoneAccent := map[int]bool{}
+	if c.Type == orgbTypeKeyboard && !c.hasKeyNames() {
+		for _, z := range t.GMBKAccent {
+			zoneAccent[z] = true
+		}
+	}
 	out := make([]RGB, len(c.LEDNames))
 	for i, name := range c.LEDNames {
 		col := base
@@ -351,7 +365,7 @@ func (c orgbController) ColorsFor(t ThemeDef, brightness int) []RGB {
 		lname := strings.ToLower(name)
 		switch c.Type {
 		case orgbTypeKeyboard:
-			if accents[lname] {
+			if accents[lname] || zoneAccent[accentColumn(xs[i])] {
 				col = accent
 			}
 		case orgbTypeMouse:
@@ -364,6 +378,37 @@ func (c orgbController) ColorsFor(t ThemeDef, brightness int) []RGB {
 		out[i] = col
 	}
 	return out
+}
+
+func (c orgbController) hasKeyNames() bool {
+	for _, n := range c.LEDNames {
+		if strings.HasPrefix(n, "Key: ") {
+			return true
+		}
+	}
+	return false
+}
+
+// accentColumn maps a horizontal position 0..1 onto the 1..10 accent columns
+// liveries define (the same columns the Glorious keyboard uses).
+func accentColumn(x float64) int {
+	return int(math.Round(x*9)) + 1
+}
+
+// ---- software breathing ------------------------------------------------------
+// OpenRGB devices have no shared breathing mode, so Livery animates them
+// itself while the Breathe effect is on.
+
+// breathPeriod matches Livery's speed setting (1 slow .. 10 fast).
+func breathPeriod(speed int) time.Duration {
+	return time.Duration(7000-550*float64(speed)) * time.Millisecond
+}
+
+// breathLevel is the brightness factor at time t: a smooth rise and fall
+// between 12% and 100%.
+func breathLevel(t time.Duration, period time.Duration) float64 {
+	ph := float64(t%period) / float64(period)
+	return 0.12 + 0.88*(0.5-0.5*math.Cos(2*math.Pi*ph))
 }
 
 // handledNatively reports devices Livery drives itself, so OpenRGB doesn't

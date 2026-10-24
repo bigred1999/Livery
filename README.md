@@ -33,6 +33,7 @@ Livery drives some devices itself and hands everything else to OpenRGB.
 | Ajazz AK820 Pro (`0C45:8009` 2.4 GHz receiver, `0C45:800A` cable) | Built in | Whole-keyboard color and breathing (the keyboard has no per-key lighting command); not yet tested on real hardware, reports welcome |
 | Logitech wireless mice on a Lightspeed receiver with HID++ RGB feature `0x8070` (e.g. G502 Lightspeed) | Built in | Logo and primary zones |
 | Tuya-based Wi-Fi bulbs and strips (Feit Electric, Smart Life, many store brands), protocol 3.1 to 3.5 | Built in, over your Wi-Fi | One-time setup below; each bulb shows the main or accent color, or Auto spreads the livery across bulbs |
+| Zone-lit keyboards through OpenRGB (e.g. SteelSeries Apex 3 / Apex 3 TKL) | Through OpenRGB | Stripes spread across the zones and accent columns light the matching zones; Breathe is animated by Livery |
 | **Anything OpenRGB supports**: motherboards, RAM, GPUs, fans, LED strips, many keyboards and mice | Through the OpenRGB SDK server | Run OpenRGB with its SDK server on (see below) |
 
 Other Alienware laptops that use the same controllers will probably work for chassis lights. The per-key keyboard map is currently specific to the m18 R2. Device reports and maps are welcome (see *Contributing*).

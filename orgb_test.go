@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"testing"
+	"time"
 )
 
 // blob builds a v3 controller description exactly as OpenRGB's
@@ -97,5 +98,46 @@ func TestParseControllerV3(t *testing.T) {
 	tc := c.ColorsFor(tri, 100)
 	if tc[0] != mustHex(tri.Stripes[0]) || tc[3] != mustHex(tri.Stripes[2]) {
 		t.Fatalf("stripes wrong: %v", tc)
+	}
+}
+
+// A zone-lit keyboard like the SteelSeries Apex 3 TKL: one linear zone of
+// 8 LEDs named "LED 0".."LED 7".
+func TestZoneKeyboardAccents(t *testing.T) {
+	c := orgbController{Type: orgbTypeKeyboard, Zones: []orgbZone{{Name: "Keyboard", LEDCount: 8}}}
+	for i := 0; i < 8; i++ {
+		c.LEDNames = append(c.LEDNames, "LED "+string(rune('0'+i)))
+	}
+	th, _ := findTheme("rosso-grafite", nil) // accent columns 1 and 10
+	got := c.ColorsFor(th, 100)
+	base, acc := mustHex(th.Base), mustHex(th.Accent)
+	for i, col := range got {
+		want := base
+		if i == 0 || i == 7 {
+			want = acc
+		}
+		if col != want {
+			t.Errorf("LED %d = %v want %v", i, col, want)
+		}
+	}
+	th, _ = findTheme("flame-job", nil) // stripes spread across the zones
+	got = c.ColorsFor(th, 100)
+	if got[0] != mustHex(hexFlameYellow) || got[7] != mustHex(hexCandyRed) {
+		t.Errorf("stripes: %v", got)
+	}
+	// Per-key keyboards keep using key names, not columns.
+	pk := orgbController{Type: orgbTypeKeyboard, Zones: []orgbZone{{LEDCount: 2}}, LEDNames: []string{"Key: Escape", "Key: W"}}
+	if g := pk.ColorsFor(th, 100); len(g) != 2 {
+		t.Fatal("per-key")
+	}
+}
+
+func TestBreathLevel(t *testing.T) {
+	p := breathPeriod(5)
+	if lo, hi := breathLevel(0, p), breathLevel(p/2, p); lo < 0.11 || lo > 0.13 || hi < 0.99 {
+		t.Errorf("breath range %v..%v", lo, hi)
+	}
+	if breathPeriod(1) <= breathPeriod(10) || breathPeriod(10) < time.Second {
+		t.Error("speed mapping")
 	}
 }
