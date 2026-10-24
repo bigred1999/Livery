@@ -54,6 +54,8 @@ type DeviceStatus struct {
 	GMBK    string `json:"gmbk"`
 	Mouse   string `json:"mouse"`
 	OpenRGB string `json:"openrgb"`
+	// Names of the devices Livery painted through OpenRGB.
+	OpenRGBDevices []string `json:"openrgbDevices"`
 	At      string `json:"at"`
 }
 
@@ -275,6 +277,8 @@ var _ = fmt.Sprintf
 // applyOpenRGB paints every OpenRGB device Livery doesn't drive itself.
 // Returns a short status for the control panel.
 func applyOpenRGB(t ThemeDef, s Settings) string {
+	var names []string
+	defer func() { setStatus(func(d *DeviceStatus) { d.OpenRGBDevices = names }) }()
 	o, err := ConnectOpenRGB()
 	if err != nil {
 		return openRGBMissingStatus()
@@ -295,6 +299,7 @@ func applyOpenRGB(t ThemeDef, s Settings) string {
 			continue
 		}
 		painted++
+		names = append(names, c.Name)
 		logf("OpenRGB %q (%d LEDs) painted", c.Name, len(c.LEDNames))
 	}
 	if painted == 0 {

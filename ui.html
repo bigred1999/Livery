@@ -39,6 +39,8 @@
   h2 { font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 34px 0 14px; display: flex; align-items: center; gap: 10px; }
   h2::after { content: ""; flex: 1; height: 1px; background: var(--border); }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(245px, 1fr)); gap: 14px; }
+  .hint { margin: 16px 0 0; padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--red); border-radius: 10px; background: var(--surface); color: var(--muted); font-size: 14px; line-height: 1.5; }
+  .hint a { color: inherit; }
   .cats { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
   .cats button { border: 1px solid var(--border); background: var(--surface); color: var(--muted); padding: 7px 14px; border-radius: 999px; font: inherit; font-size: 13px; cursor: pointer; letter-spacing: 0.03em; }
   .cats button:hover { border-color: #44444d; color: var(--text, #eee); }
@@ -105,6 +107,7 @@
     <div class="chips" id="chips"></div>
   </header>
 
+  <p class="hint" id="orgbHint" hidden></p>
   <h2>Livery</h2>
   <div class="cats" id="cats"></div>
   <div id="themes"></div>
@@ -245,8 +248,22 @@ function render() {
   const s = state.settings;
   $("#ver").textContent = "v" + state.version;
   const st = state.status || {};
-  $("#chips").innerHTML = statusChip("Alienware keys", st.laptop) + statusChip("Alienware lid / rear / power", st.lights) +
-    statusChip("Glorious GMBK", st.gmbk) + statusChip("Logitech G", st.mouse) + statusChip("OpenRGB", st.openrgb);
+  // Only list devices this PC actually has.
+  const absent = (v) => !v || v === "not connected" || v === "receiver not found";
+  let chips = [["Alienware keys", st.laptop], ["Alienware lid / rear / power", st.lights], ["Glorious GMBK", st.gmbk], ["Logitech G", st.mouse]]
+    .filter(([, v]) => !absent(v)).map(([n, v]) => statusChip(n, v));
+  const orgb = st.openrgbDevices || [];
+  if (orgb.length) chips = chips.concat(orgb.map((n) => statusChip(n, "ok, via OpenRGB")));
+  else if (st.openrgb && !String(st.openrgb).includes("none extra")) chips.push(statusChip("OpenRGB", st.openrgb));
+  if (!chips.length) chips.push(statusChip("Looking for lights", ""));
+  $("#chips").innerHTML = chips.join("");
+  const hint = !orgb.length && /not installed|not running|server is off/.test(st.openrgb || "");
+  $("#orgbHint").hidden = !hint;
+  $("#orgbHint").innerHTML = st.openrgb === "not installed"
+    ? `Only built-in devices are being painted. Install <a href="https://openrgb.org" target="_blank" rel="noopener">OpenRGB</a> (or re-run Livery Setup) to add motherboards, RAM, graphics cards, fans and other keyboards and mice.`
+    : st.openrgb === "open, but SDK server is off"
+    ? `OpenRGB is open but its SDK server is off. In OpenRGB, open the <b>SDK Server</b> tab and click <b>Start Server</b>.`
+    : `OpenRGB is installed but not running. Livery tries to start it automatically; if it doesn't appear, open OpenRGB once.`;
 
   const list = state.themes.filter((t) => t.id !== "custom-preview");
   const catOf = (t) => t.builtin ? (t.category || "Other") : "Your liveries";

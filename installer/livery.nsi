@@ -61,6 +61,9 @@ Section "Livery" SecApp
   ; Stop a running Livery (any copy) so its files can be replaced.
   InitPluginsDir
   File "/oname=$PLUGINSDIR\livery.exe" "..\build\livery.exe"
+  ; Bring settings over from a portable or older copy (never overwrites).
+  nsExec::Exec '"$PLUGINSDIR\livery.exe" import-settings "$INSTDIR"'
+  Pop $0
   nsExec::Exec '"$PLUGINSDIR\livery.exe" stop'
   Pop $0
   Sleep 1000

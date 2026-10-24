@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const version = "1.2.0"
+const version = "1.2.2"
 
 var logw io.Writer = os.Stdout
 
@@ -69,6 +69,12 @@ func main() {
 		openPanel()
 	case "stop":
 		stopBackground()
+	case "import-settings":
+		dest := ""
+		if len(os.Args) > 2 {
+			dest = os.Args[2]
+		}
+		importSettings(dest)
 	case "install":
 		installAutostart()
 	case "uninstall":
