@@ -112,6 +112,7 @@ func validTheme(t *ThemeDef) error {
 	}
 	t.GMBKAccent = zones
 	t.Builtin = false
+	t.Category = ""
 	return nil
 }
 

@@ -6,7 +6,12 @@ Livery is a single `.exe` with no installer. It runs quietly in the background, 
 
 ## Features
 
-- **Seven built-in liveries** inspired by motorsport paint: Rosso, Rosso Grafite, Tricolore, Winter Test, Verde Arancio, Giallo and Rally.
+- **27 built-in liveries in five motorsport categories**, named after colors rather than teams or sponsors:
+  - *Italian Superbikes*: Rosso, Rosso Grafite, Tricolore, Winter Test, Verde Arancio, Giallo, Rally
+  - *Group B Rally*: Turin Stripes, Blue & Gold, Turbo White, Night Stage, Tarmac Red
+  - *Formula 1*: British Racing Green, Papaya, Silver & Teal, Black & Gold, Scarlet & Yellow, French Racing Blue, Midnight Blue
+  - *Endurance*: Powder Blue & Orange, Purple & White, White, Navy & Gold, Endurance Night
+  - *Expedition & Off-road*: Expedition Yellow, Desert Raid, Safari Green, Ice Raid
 - **Build your own**: main and accent colors, accent keys (WASD, arrows, function row), left-to-right stripes, per-light colors for laptop chassis lights and mice.
 - **Brightness** and a synced **Breathe** effect.
 - **Start at login** toggle (a normal per-user startup entry, no admin needed).

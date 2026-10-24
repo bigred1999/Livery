@@ -39,6 +39,13 @@
   h2 { font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 34px 0 14px; display: flex; align-items: center; gap: 10px; }
   h2::after { content: ""; flex: 1; height: 1px; background: var(--border); }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(245px, 1fr)); gap: 14px; }
+  .cats { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
+  .cats button { border: 1px solid var(--border); background: var(--surface); color: var(--muted); padding: 7px 14px; border-radius: 999px; font: inherit; font-size: 13px; cursor: pointer; letter-spacing: 0.03em; }
+  .cats button:hover { border-color: #44444d; color: var(--text, #eee); }
+  .cats button.on { background: var(--red); border-color: var(--red); color: #fff; }
+  .cats button small { opacity: .7; margin-left: 5px; }
+  .catname { font-size: 15px; font-weight: 600; letter-spacing: 0.06em; margin: 26px 0 12px; color: var(--text, #eee); }
+  .catname:first-child { margin-top: 0; }
   .card { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; cursor: pointer; transition: border-color .15s, transform .15s; text-align: left; color: inherit; font: inherit; }
   .card:hover { border-color: #44444d; transform: translateY(-1px); }
   .card.active { border-color: var(--red); box-shadow: 0 0 0 1px var(--red), 0 8px 30px var(--red-soft); }
@@ -99,7 +106,8 @@
   </header>
 
   <h2>Livery</h2>
-  <div class="grid" id="themes"></div>
+  <div class="cats" id="cats"></div>
+  <div id="themes"></div>
 
   <h2>Fine-tune</h2>
   <div class="panel controls">
@@ -170,6 +178,8 @@ const $ = (s) => document.querySelector(s);
 let state = null;
 let draft = null;
 let editingId = null;
+let cat = "All";
+try { cat = localStorage.getItem("livery.cat") || "All"; } catch (e) {}
 
 const SLOTS = [
   ["base", "Main color"], ["accent", "Accent"], ["rearLeft", "Rear light (left)"],
@@ -239,12 +249,21 @@ function render() {
     statusChip("Glorious GMBK", st.gmbk) + statusChip("Logitech G", st.mouse) + statusChip("OpenRGB", st.openrgb);
 
   const list = state.themes.filter((t) => t.id !== "custom-preview");
-  $("#themes").innerHTML = list.map((t) => `
+  const catOf = (t) => t.builtin ? (t.category || "Other") : "Your liveries";
+  const cats = [];
+  list.forEach((t) => { if (!cats.includes(catOf(t))) cats.push(catOf(t)); });
+  if (cat !== "All" && !cats.includes(cat)) cat = "All";
+  const count = (c) => list.filter((t) => catOf(t) === c).length;
+  $("#cats").innerHTML = ["All", ...cats].map((c) =>
+    `<button class="${c === cat ? "on" : ""}" data-cat="${esc(c)}">${esc(c)}<small>${c === "All" ? list.length : count(c)}</small></button>`).join("");
+  const card = (t) => `
     <div class="card ${t.id === s.themeId ? "active" : ""}" data-id="${t.id}" role="button" tabindex="0">
       ${kbdHTML(t)}${swatchesHTML(t)}
       <h3>${esc(t.name)}<span class="tag">ACTIVE</span></h3><p>${esc(t.description || (t.builtin ? "" : "Your custom livery."))}</p>
       ${t.builtin ? "" : `<div class="actions"><button class="btn small" data-edit="${t.id}">Edit</button><button class="btn small" data-del="${t.id}">Delete</button></div>`}
-    </div>`).join("");
+    </div>`;
+  $("#themes").innerHTML = cats.filter((c) => cat === "All" || c === cat).map((c) =>
+    `${cat === "All" ? `<div class="catname">${esc(c)}</div>` : ""}<div class="grid">${list.filter((t) => catOf(t) === c).map(card).join("")}</div>`).join("");
 
   if (document.activeElement !== $("#brightness")) { $("#brightness").value = s.brightness; $("#bOut").textContent = s.brightness + "%"; }
   if (document.activeElement !== $("#speed")) { $("#speed").value = s.speed; $("#sOut").textContent = s.speed; }
@@ -253,7 +272,7 @@ function render() {
   $("#autostart").checked = state.autostart;
 
   const sf = $("#startFrom"), keep = sf.value;
-  sf.innerHTML = list.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
+  sf.innerHTML = cats.map((c) => `<optgroup label="${esc(c)}">${list.filter((t) => catOf(t) === c).map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("")}</optgroup>`).join("");
   sf.value = keep && list.some((t) => t.id === keep) ? keep : s.themeId;
   if (!draft) loadDraft(sf.value);
 }
@@ -323,6 +342,12 @@ function applySettings(patch, msg) {
     render(); if (msg) toast(msg);
   });
 }
+$("#cats").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-cat]"); if (!b) return;
+  cat = b.dataset.cat;
+  try { localStorage.setItem("livery.cat", cat); } catch (e) {}
+  render();
+});
 $("#themes").addEventListener("click", (e) => {
   const edit = e.target.dataset.edit, del = e.target.dataset.del;
   if (edit) { e.stopPropagation(); loadDraft(edit, true); $("#tName").scrollIntoView({ behavior: "smooth", block: "center" }); return; }
