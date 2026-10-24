@@ -39,6 +39,7 @@
   h2 { font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 34px 0 14px; display: flex; align-items: center; gap: 10px; }
   h2::after { content: ""; flex: 1; height: 1px; background: var(--border); }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(245px, 1fr)); gap: 14px; }
+  [hidden] { display: none !important; }
   .hint { margin: 16px 0 0; padding: 12px 14px; border: 1px solid var(--border); border-left: 3px solid var(--red); border-radius: 10px; background: var(--surface); color: var(--muted); font-size: 14px; line-height: 1.5; }
   .hint a { color: inherit; }
   .cats { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 18px; }
@@ -153,7 +154,7 @@
         <span class="muted">Stripes (left to right, replaces main color)</span>
         <div class="stripes" id="stripes"></div>
       </div>
-      <div class="field">
+      <div class="field" id="zonesField">
         <span class="muted">Glorious accent zones (columns 1-10)</span>
         <div class="zones" id="zones"></div>
       </div>
@@ -181,6 +182,7 @@ const $ = (s) => document.querySelector(s);
 let state = null;
 let draft = null;
 let editingId = null;
+let lastPresent = "";
 let cat = "All";
 try { cat = localStorage.getItem("livery.cat") || "All"; } catch (e) {}
 
@@ -232,8 +234,18 @@ function kbdHTML(t) {
   for (let r = 0; r < 6; r++) for (let c = 0; c < 15; c++) h += `<i style="background:${glow(keyColor(t, r, c))}"></i>`;
   return h + "</div>";
 }
+// What this PC has, so the page only talks about real devices.
+function present() {
+  const st = (state && state.status) || {};
+  const absent = (v) => !v || v === "not connected" || v === "receiver not found";
+  return { chassis: !absent(st.lights), mouse: !absent(st.mouse) || (st.openrgbDevices || []).length > 0, gmbk: !absent(st.gmbk) };
+}
 function swatchesHTML(t) {
-  const s = [["Rear", t.rearLeft], ["Lid", t.lid], ["Power", t.power], ["Mouse", t.mouseLogo]];
+  const has = present();
+  const s = [];
+  if (has.chassis) s.push(["Rear", t.rearLeft], ["Lid", t.lid], ["Power", t.power]);
+  if (has.mouse) s.push(["Mouse", t.mouseLogo]);
+  if (!s.length) return "";
   return '<div class="swatches">' + s.map(([n, c]) => `<span class="sw"><i style="background:${glow(c)}"></i>${n}</span>`).join("") + "</div>";
 }
 
@@ -250,6 +262,8 @@ function render() {
   const st = state.status || {};
   // Only list devices this PC actually has.
   const absent = (v) => !v || v === "not connected" || v === "receiver not found";
+  const editorKey = JSON.stringify(present());
+  if (draft && editorKey !== lastPresent) { lastPresent = editorKey; renderEditor(); }
   let chips = [["Alienware keys", st.laptop], ["Alienware lid / rear / power", st.lights], ["Glorious GMBK", st.gmbk], ["Logitech G", st.mouse]]
     .filter(([, v]) => !absent(v)).map(([n, v]) => statusChip(n, v));
   const orgb = st.openrgbDevices || [];
@@ -307,7 +321,10 @@ function loadDraft(id, editing = false) {
   renderEditor();
 }
 function renderEditor() {
-  $("#editor").innerHTML = SLOTS.map(([k, label]) => `
+  const has = present();
+  const show = ([k]) => (has.chassis || !["rearLeft", "rearRight", "lid", "power"].includes(k)) && (has.mouse || !k.startsWith("mouse"));
+  $("#zonesField").hidden = !has.gmbk;
+  $("#editor").innerHTML = SLOTS.filter(show).map(([k, label]) => `
     <label class="colorfield"><span>${label}</span><input type="color" data-k="${k}" value="${draft[k]}"></label>`).join("");
   $("#accentKeys").value = draft.accentKeys || "none";
   const st = draft.stripes;
