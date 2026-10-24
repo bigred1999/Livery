@@ -39,7 +39,9 @@ type screenView struct {
 func buildScreenView(c Config) screenView {
 	v := screenView{Settings: ScreenSettings{Model: "coupe", Body: "#FF6A00", Accent: "#00AAFF", Glow: "#00AAFF"}}
 	if c.Screen != nil {
-		v.Settings = *c.Screen
+		if sc := *c.Screen; sc.normalize() == nil {
+			v.Settings = sc
+		}
 	}
 	screenUpload.Lock()
 	v.Running, v.Done, v.Total, v.Result = screenUpload.running, screenUpload.done, screenUpload.total, screenUpload.result
@@ -365,7 +367,7 @@ func startPanel() {
 	// Keyboard screen animations (Ajazz AK820 Pro).
 	mux.HandleFunc("/api/screen/preview", guard(func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
-		sc := ScreenSettings{Model: q.Get("model"), Body: q.Get("body"), Accent: q.Get("accent"), Glow: q.Get("glow"), Flag: q.Get("flag")}
+		sc := ScreenSettings{Model: q.Get("model"), Body: q.Get("body"), Accent: q.Get("accent"), Glow: q.Get("glow")}
 		b, err := ScreenPreviewPNG(sc)
 		if err != nil {
 			http.Error(w, err.Error(), 400)

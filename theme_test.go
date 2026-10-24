@@ -24,26 +24,17 @@ func TestBuiltinThemes(t *testing.T) {
 	}
 }
 
-// Flag liveries put one stripe per key row, doubling the middle stripe when
-// the flag has fewer stripes than the keyboard has rows.
-func TestFlagRows(t *testing.T) {
-	th, _ := findTheme("trans-pride", nil)
+// Row stripes (custom liveries can use them): one stripe per key row,
+// doubling the middle stripe when there are fewer stripes than rows.
+func TestStripeRows(t *testing.T) {
+	th := ThemeDef{Base: "#000000", Accent: "#000000", AccentKeys: "none", StripeRows: true,
+		Stripes:  []string{"#0000FF", "#FF00FF", "#FFFFFF", "#FF00FF", "#0000FF"},
+		RearLeft: "#000000", RearRight: "#000000", Lid: "#000000", Power: "#000000", MouseLogo: "#000000", MouseSide: "#000000"}
 	r := th.Resolve(100)
-	var got []RGB
-	for _, row := range m18Rows {
-		got = append(got, r.Keys[row[3]])
-	}
-	want := []string{hexTransBlue, hexTransPink, hexWarmWhite, hexWarmWhite, hexTransPink, hexTransBlue}
-	for i := range want {
-		if got[i] != mustHex(want[i]) {
-			t.Errorf("row %d = %v want %s", i, got[i], want[i])
-		}
-	}
-	th, _ = findTheme("rainbow-pride", nil)
-	r = th.Resolve(100)
+	want := []string{"#0000FF", "#FF00FF", "#FFFFFF", "#FFFFFF", "#FF00FF", "#0000FF"}
 	for i, row := range m18Rows {
-		if r.Keys[row[0]] != mustHex(th.Stripes[i]) {
-			t.Errorf("rainbow row %d", i)
+		if r.Keys[row[3]] != mustHex(want[i]) {
+			t.Errorf("row %d = %v want %s", i, r.Keys[row[3]], want[i])
 		}
 	}
 }

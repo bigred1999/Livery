@@ -194,19 +194,58 @@ var BuiltinThemes = []ThemeDef{
 	solid(catExpedition, "ice-raid", "Ice Raid", "Ice blue with high-visibility orange.",
 		hexIce, hexOrange, hexOrange, hexIce, 1, 10),
 
-	// ---- Pride ----
-	pride(catPride, "rainbow-pride", "Rainbow Pride", "The six-stripe rainbow flag, one color per key row. Try it with Wave.",
-		hexPrideRed, hexPrideOrange, hexPrideYellow, hexPrideGreen, hexPrideBlue, hexPrideViolet),
-	pride(catPride, "trans-pride", "Trans Pride", "Light blue, pink and white.",
-		hexTransBlue, hexTransPink, hexWarmWhite, hexTransPink, hexTransBlue),
-	pride(catPride, "bi-pride", "Bi Pride", "Magenta, purple and blue.",
-		hexBiPink, hexBiPink, hexBiPurple, hexBiBlue, hexBiBlue),
-	pride(catPride, "pan-pride", "Pan Pride", "Pink, yellow and cyan.",
-		hexPanPink, hexPanYellow, hexPanCyan),
-	pride(catPride, "lesbian-pride", "Lesbian Pride", "Sunset oranges through white to pinks.",
-		hexLesOrange, hexLesLight, hexWarmWhite, hexLesPink, hexLesRose),
-	pride(catPride, "nonbinary-pride", "Nonbinary Pride", "Yellow, white, purple and black.",
-		hexNbYellow, hexWarmWhite, hexNbPurple, hexAlu),
+	// ---- Stock car ----
+	{
+		ID: "black-silver-stock", Name: "Black & Silver", Builtin: true, Category: catStockCar,
+		Description: "A black stock car with silver lettering and red pinstripes, for the late-'90s superspeedway look.",
+		Base:        hexAlu, Accent: hexChrome, AccentKeys: "wasd-arrows",
+		RearLeft: hexStockRed, RearRight: hexStockRed, Lid: hexChrome, Power: hexStockRed,
+		MouseLogo: hexChrome, MouseSide: hexStockRed, GMBKAccent: []int{1, 10},
+	},
+	{
+		ID: "speedway-blue", Name: "Speedway Blue & Red", Builtin: true, Category: catStockCar,
+		Description: "Bright speedway blue with fire-engine red, the classic stock-car king colors.",
+		Base:        hexSpeedwayBlue, Accent: hexStockRed, AccentKeys: "wasd-arrows",
+		RearLeft: hexStockRed, RearRight: hexStockRed, Lid: hexSpeedwayBlue, Power: hexStockRed,
+		MouseLogo: hexStockRed, MouseSide: hexSpeedwayBlue, GMBKAccent: []int{1, 10},
+	},
+
+	// ---- Rallycross & gymkhana ----
+	{
+		ID: "gymkhana", Name: "Gymkhana", Builtin: true, Category: catGymkhana,
+		Description: "Black, white and fluorescent green, for tire smoke and donuts round the cones.",
+		Base:        hexAlu, Accent: hexFluoGreen, AccentKeys: "wasd-arrows",
+		RearLeft: hexFluoGreen, RearRight: hexFluoGreen, Lid: hexWarmWhite, Power: hexFluoGreen,
+		MouseLogo: hexFluoGreen, MouseSide: hexWarmWhite, GMBKAccent: []int{1, 10},
+	},
+	{
+		ID: "rallycross-blue", Name: "Rallycross Blue", Builtin: true, Category: catGymkhana,
+		Description: "Electric blue with red and white, built for jumps, joker laps and freestyle.",
+		Base:        hexFrenchBlue, Accent: hexStockRed, AccentKeys: "wasd-arrows",
+		RearLeft: hexStockRed, RearRight: hexStockRed, Lid: hexWarmWhite, Power: hexStockRed,
+		MouseLogo: hexWarmWhite, MouseSide: hexStockRed, GMBKAccent: []int{1, 10},
+	},
+
+	// ---- Military ----
+	solid(catMilitary, "builder-navy-gold", "Builder Navy & Gold", "Navy blue and gold, for the construction battalions who build and fight.",
+		hexServiceNavy, hexGold, hexGold, hexGold, 1, 10),
+	{
+		ID: "eagle-black-gold", Name: "Eagle Black & Gold", Builtin: true, Category: catMilitary,
+		Description: "Airborne black with a white eagle, gold and a flash of red.",
+		Base:        hexAlu, Accent: hexGold, AccentKeys: "wasd-arrows",
+		RearLeft: hexStockRed, RearRight: hexStockRed, Lid: hexWarmWhite, Power: hexGold,
+		MouseLogo: hexWarmWhite, MouseSide: hexGold, GMBKAccent: []int{1, 10},
+	},
+	solid(catMilitary, "pirate-squadron", "Pirate Squadron", "Black and yellow with white, the skull-and-crossbones fighter squadron look.",
+		hexAlu, hexYellow, hexYellow, hexWarmWhite, 1, 10),
+	{
+		ID: "sundown-squadron", Name: "Sundown Squadron", Builtin: true, Category: catMilitary,
+		Description: "Red and white sunburst rays across the keys, straight off a fighter's tail.",
+		Base:        hexWarmWhite, Accent: hexStockRed, AccentKeys: "none",
+		Stripes:  []string{hexStockRed, hexWarmWhite, hexStockRed, hexWarmWhite, hexStockRed},
+		RearLeft: hexStockRed, RearRight: hexStockRed, Lid: hexWarmWhite, Power: hexStockRed,
+		MouseLogo: hexStockRed, MouseSide: hexWarmWhite,
+	},
 
 	// ---- Choppers & customs ----
 	{
@@ -243,7 +282,9 @@ const (
 	catEndurance  = "Endurance"
 	catExpedition = "Expedition & Off-road"
 	catChoppers   = "Choppers & Customs"
-	catPride      = "Pride"
+	catStockCar   = "Stock Car"
+	catGymkhana   = "Rallycross & Gymkhana"
+	catMilitary   = "Military"
 )
 
 // More paint colors (chosen to look right on RGB LEDs, so some are brighter
@@ -279,41 +320,11 @@ const (
 	hexCandyRed    = "#C80018"
 	hexChrome      = "#C8D2DC"
 
-	// Pride flag colors, tuned for LEDs
-	hexPrideRed    = "#FF0018"
-	hexPrideOrange = "#FF7A00"
-	hexPrideYellow = "#FFE600"
-	hexPrideGreen  = "#00C832"
-	hexPrideBlue   = "#0050FF"
-	hexPrideViolet = "#8C00FF"
-	hexTransBlue   = "#3CC8FF"
-	hexTransPink   = "#FF6EA0"
-	hexBiPink      = "#E6006E"
-	hexBiPurple    = "#9B3CB4"
-	hexBiBlue      = "#0038C8"
-	hexPanPink     = "#FF1E8C"
-	hexPanYellow   = "#FFD800"
-	hexPanCyan     = "#1EB4FF"
-	hexLesOrange   = "#E63C00"
-	hexLesLight    = "#FF8C50"
-	hexLesPink     = "#E650A0"
-	hexLesRose     = "#B4005A"
-	hexNbYellow    = "#FFE600"
-	hexNbPurple    = "#9B4BE6"
+	hexStockRed     = "#FF0A0A"
+	hexFluoGreen    = "#3CFF14"
+	hexServiceNavy  = "#0A24B4"
+	hexSpeedwayBlue = "#2896FF"
 )
-
-// pride builds a flag livery: stripes in rows (top to bottom) where a device
-// has rows, left to right elsewhere; chassis lights take the outer stripes.
-func pride(cat, id, name, desc string, stripes ...string) ThemeDef {
-	mid := stripes[len(stripes)/2]
-	return ThemeDef{
-		ID: id, Name: name, Description: desc, Builtin: true, Category: cat,
-		Base: mid, Accent: stripes[0], AccentKeys: "none",
-		Stripes: stripes, StripeRows: true,
-		RearLeft: stripes[0], RearRight: stripes[len(stripes)-1], Lid: mid, Power: stripes[0],
-		MouseLogo: stripes[0], MouseSide: stripes[len(stripes)-1],
-	}
-}
 
 // solid builds the common two-color livery: base keys, accent WASD + arrows,
 // chassis lights in one color, the lid logo in another, and accent GMBK columns.
