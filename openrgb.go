@@ -370,7 +370,7 @@ func (c orgbController) ColorsFor(t ThemeDef, brightness int) []RGB {
 // fight over them.
 func handledNatively(location string) bool {
 	l := strings.ToUpper(location)
-	for _, id := range []string{"VID_187C", "VID_0D62&PID_AAB1", "VID_3794", "187C:", "0D62:AAB1", "3794:",
+	for _, id := range []string{"VID_187C", "VID_0D62&PID_AAB1", "VID_3794", "VID_0C45&PID_8009", "VID_0C45&PID_800A", "0C45:8009", "0C45:800A", "187C:", "0D62:AAB1", "3794:",
 		// Logitech Lightspeed receivers (Livery's own HID++ driver handles the mouse)
 		"VID_046D&PID_C539", "VID_046D&PID_C53A", "VID_046D&PID_C541", "VID_046D&PID_C545", "VID_046D&PID_C547", "VID_046D&PID_C54D"} {
 		if strings.Contains(l, id) {

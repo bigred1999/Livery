@@ -30,7 +30,7 @@ const (
 	resumeGapLimit = 20 * time.Second
 )
 
-type presence struct{ laptop, gmbk, receiver bool }
+type presence struct{ laptop, gmbk, receiver, ajazz bool }
 
 func detectPresence(all []HidInfo) presence {
 	var p presence
@@ -42,6 +42,8 @@ func detectPresence(all []HidInfo) presence {
 			p.gmbk = true
 		case isLogiReceiver(h):
 			p.receiver = true
+		case isAK820Pro(h) && h.UsagePage == ajazzUsagePage:
+			p.ajazz = true
 		}
 	}
 	return p
@@ -121,6 +123,7 @@ func runBackground() {
 		r := t.Resolve(s.Brightness)
 		applyLaptop(all, r, s)
 		applyGMBK(all, r, s)
+		applyAjazz(all, t, s)
 		st := applyOpenRGB(t, s)
 		setStatus(func(d *DeviceStatus) { d.OpenRGB = st })
 		applyBulbs(t, s)
@@ -205,6 +208,14 @@ loop:
 			}
 			if !p.gmbk && have.gmbk {
 				setStatus(func(d *DeviceStatus) { d.GMBK = "not connected" })
+			}
+			if p.ajazz && !have.ajazz {
+				logf("Ajazz AK820 Pro connected")
+				time.Sleep(time.Second)
+				applyAjazz(all, t, s)
+			}
+			if !p.ajazz && have.ajazz {
+				setStatus(func(d *DeviceStatus) { d.Ajazz = "not connected" })
 			}
 			if p.laptop && !have.laptop {
 				applyLaptop(all, r, s)

@@ -53,6 +53,7 @@ type DeviceStatus struct {
 	Lights  string `json:"lights"`
 	GMBK    string `json:"gmbk"`
 	Mouse   string `json:"mouse"`
+	Ajazz   string `json:"ajazz"`
 	OpenRGB string `json:"openrgb"`
 	// Names of the devices Livery painted through OpenRGB.
 	OpenRGBDevices []string `json:"openrgbDevices"`

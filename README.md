@@ -27,6 +27,7 @@ Livery drives some devices itself and hands everything else to OpenRGB.
 | Alienware m18 R2 per-key keyboard (`0D62:AAB1`) | Built in | Per-key colors, accents, stripes, breathing |
 | Alienware AW-ELC chassis lights (`187C:0551`): rear "Tron" bar, lid logo, power button | Built in | Power button colors are stored in the controller's power-state slots |
 | Glorious GMBK 75% (`3794:B000` ANSI, `3794:B002` ISO) | Built in | Global color plus 10 column zones; settings are saved on the keyboard |
+| Ajazz AK820 Pro (`0C45:8009` 2.4 GHz receiver, `0C45:800A` cable) | Built in | Whole-keyboard color and breathing (the keyboard has no per-key lighting command); not yet tested on real hardware, reports welcome |
 | Logitech wireless mice on a Lightspeed receiver with HID++ RGB feature `0x8070` (e.g. G502 Lightspeed) | Built in | Logo and primary zones |
 | Tuya-based Wi-Fi bulbs and strips (Feit Electric, Smart Life, many store brands), protocol 3.1 to 3.5 | Built in, over your Wi-Fi | One-time setup below; each bulb shows the main or accent color, or Auto spreads the livery across bulbs |
 | **Anything OpenRGB supports**: motherboards, RAM, GPUs, fans, LED strips, many keyboards and mice | Through the OpenRGB SDK server | Run OpenRGB with its SDK server on (see below) |

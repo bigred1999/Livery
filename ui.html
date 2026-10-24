@@ -276,7 +276,7 @@ function render() {
   const absent = (v) => !v || v === "not connected" || v === "receiver not found";
   const editorKey = JSON.stringify(present());
   if (draft && editorKey !== lastPresent) { lastPresent = editorKey; renderEditor(); }
-  let chips = [["Alienware keys", st.laptop], ["Alienware lid / rear / power", st.lights], ["Glorious GMBK", st.gmbk], ["Logitech G", st.mouse]]
+  let chips = [["Alienware keys", st.laptop], ["Alienware lid / rear / power", st.lights], ["Glorious GMBK", st.gmbk], ["Logitech G", st.mouse], ["Ajazz AK820 Pro", st.ajazz]]
     .filter(([, v]) => !absent(v)).map(([n, v]) => statusChip(n, v));
   const orgb = st.openrgbDevices || [];
   if (orgb.length) chips = chips.concat(orgb.map((n) => statusChip(n, "ok, via OpenRGB")));

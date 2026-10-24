@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const version = "1.3.0"
+const version = "1.4.0"
 
 var logw io.Writer = os.Stdout
 
@@ -118,6 +118,10 @@ func runScan() {
 			tag = "  <- Logitech receiver HID++"
 		case isGlorious(h):
 			tag = "  <- Glorious"
+		case isAK820Pro(h) && h.UsagePage == ajazzUsagePage:
+			tag = "  <- Ajazz AK820 Pro lighting"
+		case isAK820Pro(h):
+			tag = "  <- Ajazz AK820 Pro"
 		}
 		rw := "rw"
 		if !h.Writable {

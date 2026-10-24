@@ -58,6 +58,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## ak820pro-linux (protocol reference only)
+
+The Ajazz AK820 Pro lighting commands in `ajazz.go` follow the protocol notes in https://github.com/ErvinUrban-Bratislava/ak820pro-linux (MIT License, Copyright (c) 2024-2026 Ervin Urban). No code from that project is included.
+
 ## TinyTuya (protocol reference only)
 
 `tuya.go` and `tuyacloud.go` are an independent Go implementation of the Tuya local protocol (3.1 to 3.5) and the Tuya OpenAPI request signing, written from the protocol notes in TinyTuya (https://github.com/jasonacox/tinytuya, MIT License, Copyright (c) 2024 Jason Cox). No TinyTuya code is included in Livery; `testdata/tuya_fakebulb.py` uses the TinyTuya package from PyPI to test Livery against it.
