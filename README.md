@@ -6,13 +6,13 @@ Livery is a single `.exe` with no installer. It runs quietly in the background, 
 
 ## Features
 
-- **41 built-in liveries in nine categories**, named after colors rather than teams or sponsors:
+- **42 built-in liveries in nine categories**, named after colors rather than teams or sponsors:
   - *Italian Superbikes*: Rosso, Rosso Grafite, Tricolore, Winter Test, Verde Arancio, Giallo, Rally
   - *Group B Rally*: Turin Stripes, Blue & Gold, Turbo White, Night Stage, Tarmac Red
   - *Formula 1*: British Racing Green, Papaya, Silver & Teal, Black & Gold, Scarlet & Yellow, French Racing Blue, Midnight Blue
   - *Endurance*: Powder Blue & Orange, Purple & White, White, Navy & Gold, Endurance Night
   - *Expedition & Off-road*: Expedition Yellow, Desert Raid, Safari Green, Ice Raid
-  - *Choppers & Customs*: Flame Job, Chrome & Black, Candy Apple, Black & Orange, Candy Purple, Stars & Stripes
+  - *Choppers & Customs*: Flame Job, Chrome & Black, Hog Cranker, Candy Apple, Black & Orange, Candy Purple, Stars & Stripes
   - *Stock Car*: Black & Silver, Speedway Blue & Red
   - *Rallycross & Gymkhana*: Gymkhana, Rallycross Blue
   - *Military*: Builder Navy & Gold, Eagle Black & Gold, Pirate Squadron, Sundown Squadron

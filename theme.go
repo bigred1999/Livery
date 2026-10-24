@@ -258,6 +258,13 @@ var BuiltinThemes = []ThemeDef{
 	},
 	solid(catChoppers, "chrome-black", "Chrome & Black", "Gloss black tins with polished chrome details.",
 		hexAlu, hexChrome, hexChrome, hexChrome, 1, 10),
+	{
+		ID: "hog-cranker", Name: "Hog Cranker", Builtin: true, Category: catChoppers,
+		Description: "Kick it over and let it rumble: oil-black tins, glowing gauge amber and a hot red tail light. Try it with Redline.",
+		Base:        hexAlu, Accent: hexAmber, AccentKeys: "wasd-arrows",
+		RearLeft: hexStockRed, RearRight: hexStockRed, Lid: hexChrome, Power: hexAmber,
+		MouseLogo: hexAmber, MouseSide: hexStockRed, GMBKAccent: []int{1, 10},
+	},
 	solid(catChoppers, "candy-apple", "Candy Apple", "Deep candy red with gold pinstriping.",
 		hexCandyRed, hexGold, hexCandyRed, hexGold, 10),
 	solid(catChoppers, "black-orange", "Black & Orange", "Classic V-twin black with bright orange.",
