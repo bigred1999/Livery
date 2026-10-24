@@ -221,6 +221,15 @@
     </div>
     <label class="switch"><input type="checkbox" id="updToggle"><span></span></label>
   </div>
+
+  <h2>Help</h2>
+  <div class="panel toggle">
+    <div>
+      <div>Something not working?</div>
+      <div class="muted">Creates a support report (a small zip) on your Desktop with your Livery logs and the list of connected devices. Send it to whoever is helping you, or attach it to an issue on <a href="https://github.com/bigred1999/Livery/issues/new" target="_blank" rel="noopener">GitHub</a>. Passwords, keys and your Windows user name are left out.</div>
+    </div>
+    <button class="btn" id="mkReport">Create support report</button>
+  </div>
 </div>
 <div class="toast" id="toast"></div>
 
@@ -379,6 +388,11 @@ $("#updBanner").addEventListener("click", (e) => {
   run(async () => { state = await api("/api/update/install", {}); render(); toast("Installing the update…"); });
 });
 $("#updToggle").addEventListener("change", (e) => applySettings({ updateCheck: e.target.checked }, e.target.checked ? "Will check for updates" : "Update checks off"));
+$("#mkReport").addEventListener("click", () => run(async () => {
+  toast("Creating support report…");
+  const r = await api("/api/report", {});
+  toast(`Saved ${r.file} to your ${r.folder}`);
+}));
 $("#updCheckNow").addEventListener("click", (e) => {
   e.preventDefault();
   run(async () => { state = await api("/api/update/check", {}); render(); toast(state.update.available ? `Livery ${state.update.version} is available` : "You're on the latest version"); });

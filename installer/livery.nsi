@@ -76,6 +76,7 @@ Section "Livery" SecApp
   WriteUninstaller "$INSTDIR\Uninstall.exe"
 
   CreateShortcut "$SMPROGRAMS\Livery.lnk" "$INSTDIR\livery.exe" "" "$INSTDIR\livery.exe" 0 SW_SHOWNORMAL "" "Livery RGB control panel"
+  CreateShortcut "$SMPROGRAMS\Livery support report.lnk" "$INSTDIR\livery.exe" "report" "$INSTDIR\livery.exe" 0 SW_SHOWNORMAL "" "Save a troubleshooting report for Livery to the Desktop"
 
   WriteRegStr HKCU "${UNINST_KEY}" "DisplayName" "Livery"
   WriteRegStr HKCU "${UNINST_KEY}" "DisplayVersion" "${VERSION}"
@@ -212,6 +213,7 @@ Section "Uninstall"
   Delete "$INSTDIR\Uninstall.exe"
   RMDir "$INSTDIR"
   Delete "$SMPROGRAMS\Livery.lnk"
+  Delete "$SMPROGRAMS\Livery support report.lnk"
   Delete "$DESKTOP\Livery.lnk"
   DeleteRegKey HKCU "${UNINST_KEY}"
   ; OpenRGB and PawnIO are left installed; remove them from Windows Settings > Apps if you like.

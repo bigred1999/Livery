@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const version = "1.5.2"
+const version = "1.5.3"
 
 var logw io.Writer = os.Stdout
 
@@ -58,6 +58,8 @@ func main() {
 	switch cmd {
 	case "scan":
 		runScan()
+	case "report":
+		runReport()
 	case "apply":
 		runApply()
 	case "power":

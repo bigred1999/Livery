@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -401,6 +402,15 @@ func startPanel() {
 			return
 		}
 		writeJSON(w, buildState())
+	}))
+	mux.HandleFunc("/api/report", guard(func(w http.ResponseWriter, r *http.Request) {
+		path, err := CreateSupportReport()
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+		showReportInExplorer(path)
+		writeJSON(w, map[string]string{"file": filepath.Base(path), "folder": filepath.Base(filepath.Dir(path))})
 	}))
 	mux.HandleFunc("/api/probe", guard(probeHandler))
 	mux.HandleFunc("/api/reapply", guard(func(w http.ResponseWriter, r *http.Request) {

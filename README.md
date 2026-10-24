@@ -100,9 +100,9 @@ Requires Go 1.22+, plus NSIS and mingw-w64 binutils for the installer and icon (
 
 Just the app: `GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w -H windowsgui" -o livery.exe .` The control panel (`ui.html`) is embedded in the binary.
 
-## Contributing
+## Contributing and support reports
 
-`livery.exe scan` writes `logs/scan.txt` with every HID device's IDs and report layout, which is the first thing needed to add a device. Issues with that file attached, plus what the device is, are the most useful bug reports.
+In the control panel, **Help → Create support report** (or Start menu → *Livery support report*) saves `Livery-report-<date>.zip` to the Desktop: Livery's recent logs, its status, OpenRGB's device list and every USB/HID device's IDs and report layout. It only reads devices, and leaves out Tuya keys, the cloud secret and project ID, and your Windows user name. Attach it to an issue together with what the device is; that's the first thing needed to fix a problem or add a device.
 
 ## Credits and trademarks
 
