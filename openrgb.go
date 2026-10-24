@@ -338,12 +338,42 @@ func (c orgbController) ledX() []float64 {
 	return x
 }
 
+// ledY returns each LED's row position 0..1 from the matrix map, and whether
+// the device has rows at all.
+func (c orgbController) ledY() ([]float64, bool) {
+	y := make([]float64, len(c.LEDNames))
+	has := false
+	base := 0
+	for _, z := range c.Zones {
+		n := int(z.LEDCount)
+		if z.Height > 1 && len(z.MatrixMap) == int(z.Width*z.Height) {
+			has = true
+			for k, v := range z.MatrixMap {
+				if v == 0xFFFFFFFF || int(v) >= n {
+					continue
+				}
+				if base+int(v) < len(y) {
+					y[base+int(v)] = (float64(k/int(z.Width)) + 0.5) / float64(z.Height)
+				}
+			}
+		}
+		base += n
+	}
+	return y, has
+}
+
 // ColorsFor works out every LED's color for a theme.
 func (c orgbController) ColorsFor(t ThemeDef, brightness int) []RGB {
 	f := float64(brightness) / 100
 	base := mustHex(t.Base).Scale(f)
 	accent := mustHex(t.Accent).Scale(f)
 	xs := c.ledX()
+	stripePos := xs
+	if t.StripeRows {
+		if ys, ok := c.ledY(); ok {
+			stripePos = ys
+		}
+	}
 	accents := map[string]bool{}
 	for _, n := range accentKeyNames[t.AccentKeys] {
 		accents[strings.ToLower(n)] = true
@@ -364,7 +394,7 @@ func (c orgbController) ColorsFor(t ThemeDef, brightness int) []RGB {
 	out := make([]RGB, len(c.LEDNames))
 	for i, name := range c.LEDNames {
 		col := base
-		if s, ok := t.stripeAt(xs[i]); ok {
+		if s, ok := t.stripeAt(stripePos[i]); ok {
 			col = s.Scale(f)
 		}
 		lname := strings.ToLower(name)

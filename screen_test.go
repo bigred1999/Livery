@@ -23,7 +23,7 @@ func TestScreenPayload(t *testing.T) {
 		t.Fatalf("red = % x", r[:2])
 	}
 	if dir := os.Getenv("LIVERY_SCREEN_PREVIEW"); dir != "" {
-		for _, m := range []string{"coupe", "sedan", "bike"} {
+		for _, m := range []string{"coupe", "sedan", "bike", "flag"} {
 			sc.Model = m
 			if m == "sedan" {
 				sc.Body, sc.Accent, sc.Glow = "#F2F2F0", "#1E64FF", "#00C8FF"

@@ -90,6 +90,7 @@
   .screenbox { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
   #scrPrev { width: 256px; height: 256px; image-rendering: pixelated; border-radius: 12px; border: 1px solid var(--border); background: #000; }
   .screenctl { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
+  .scrcolors[hidden], #scrFlagField[hidden] { display: none; }
   .scrcolors { display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); gap: 10px; }
   .seg.wrap { flex-wrap: wrap; }
   .effects-field { grid-column: 1 / -1; }
@@ -189,7 +190,7 @@
         </select>
       </div>
       <div class="field">
-        <span class="muted">Stripes (left to right, replaces main color)</span>
+        <span class="muted">Stripes (replace the main color) <label class="dir" style="display:inline-flex;margin:0 0 0 10px"><input type="checkbox" id="stripeRows"> run top to bottom, like a flag</label></span>
         <div class="stripes" id="stripes"></div>
       </div>
       <div class="field" id="zonesField">
@@ -210,9 +211,15 @@
     <canvas id="scrPrev" width="128" height="128"></canvas>
     <div class="screenctl">
       <div class="seg" id="scrModel">
-        <button data-m="coupe">Street coupe</button><button data-m="sedan">Tuner sedan</button><button data-m="bike">Superbike</button>
+        <button data-m="coupe">Street coupe</button><button data-m="sedan">Tuner sedan</button><button data-m="bike">Superbike</button><button data-m="flag">Pride flag</button>
       </div>
-      <div class="scrcolors">
+      <label class="field" id="scrFlagField" hidden>Flag
+        <select id="scrFlag">
+          <option value="rainbow">Rainbow</option><option value="trans">Trans</option><option value="bi">Bi</option>
+          <option value="pan">Pan</option><option value="lesbian">Lesbian</option><option value="nonbinary">Nonbinary</option>
+        </select>
+      </label>
+      <div class="scrcolors" id="scrColors">
         <label class="colorfield"><span>Paint</span><input type="color" id="scrBody"></label>
         <label class="colorfield"><span>Accent</span><input type="color" id="scrAccent"></label>
         <label class="colorfield"><span>Neon</span><input type="color" id="scrGlow"></label>
@@ -298,7 +305,8 @@ function keyColor(t, r, c) {
   const acc = ACCENTS[t.accentKeys] || [];
   if (acc.some(([ar, ac]) => ar === r && ac === c)) return t.accent;
   if (t.stripes && t.stripes.length) {
-    const i = Math.min(t.stripes.length - 1, Math.floor((c / 15) * t.stripes.length));
+    const pos = t.stripeRows ? (r + 0.5) / 6 : c / 14;
+    const i = Math.min(t.stripes.length - 1, Math.floor(pos * t.stripes.length));
     return t.stripes[i];
   }
   return t.base;
@@ -525,7 +533,7 @@ $("#updCheckNow").addEventListener("click", (e) => {
 
 // --- keyboard screen (Ajazz AK820 Pro) ------------------------------------------
 let scr = null, scrImg = null, scrKey = "", scrFrame = 0;
-function scrSettings() { return { model: scr.model, body: $("#scrBody").value, accent: $("#scrAccent").value, glow: $("#scrGlow").value }; }
+function scrSettings() { return { model: scr.model, body: $("#scrBody").value, accent: $("#scrAccent").value, glow: $("#scrGlow").value, flag: $("#scrFlag").value }; }
 function loadScrPreview() {
   const s = scrSettings(), key = JSON.stringify(s);
   if (key === scrKey) return;
@@ -542,8 +550,11 @@ function renderScreen() {
   if (!scr) {
     scr = Object.assign({}, v.settings);
     $("#scrBody").value = scr.body; $("#scrAccent").value = scr.accent; $("#scrGlow").value = scr.glow;
+    $("#scrFlag").value = scr.flag || "rainbow";
   }
   document.querySelectorAll("#scrModel button").forEach((b) => b.classList.toggle("on", b.dataset.m === scr.model));
+  $("#scrFlagField").hidden = scr.model !== "flag";
+  $("#scrColors").hidden = scr.model === "flag";
   $("#scrSend").disabled = v.running;
   $("#scrStatus").textContent = v.running ? (v.total ? `Uploading… ${Math.round(100 * v.done / v.total)}%` : "Getting the screen ready…")
     : v.result === "ok" ? "On your keyboard now."
@@ -559,7 +570,7 @@ setInterval(() => {
   ctx.drawImage(scrImg, scrFrame * 128, 0, 128, 128, 0, 0, 128, 128);
 }, 80);
 $("#scrModel").addEventListener("click", (e) => { const m = e.target.dataset.m; if (!m || !scr) return; scr.model = m; renderScreen(); });
-["#scrBody", "#scrAccent", "#scrGlow"].forEach((id) => $(id).addEventListener("change", loadScrPreview));
+["#scrBody", "#scrAccent", "#scrGlow", "#scrFlag"].forEach((id) => $(id).addEventListener("change", loadScrPreview));
 $("#scrSend").addEventListener("click", () => run(async () => {
   state = await api("/api/screen/upload", scrSettings()); render(); toast("Sending to the keyboard screen…");
   const poll = setInterval(async () => {
@@ -662,9 +673,10 @@ function renderEditor() {
   $("#editor").innerHTML = SLOTS.filter(show).map(([k, label]) => `
     <label class="colorfield"><span>${label}</span><input type="color" data-k="${k}" value="${draft[k]}"></label>`).join("");
   $("#accentKeys").value = draft.accentKeys || "none";
+  $("#stripeRows").checked = !!draft.stripeRows;
   const st = draft.stripes;
   $("#stripes").innerHTML = st.map((c, i) => `<input type="color" data-s="${i}" value="${c}">`).join("") +
-    (st.length < 5 ? `<button class="btn small" id="addStripe">+ stripe</button>` : "") +
+    (st.length < 8 ? `<button class="btn small" id="addStripe">+ stripe</button>` : "") +
     (st.length ? `<button class="btn small" id="clrStripe">Clear</button>` : "");
   $("#zones").innerHTML = Array.from({ length: 10 }, (_, i) => i + 1)
     .map((z) => `<button data-z="${z}" class="${draft.gmbkAccentZones.includes(z) ? "on" : ""}">${z}</button>`).join("");
@@ -682,6 +694,7 @@ $("#zones").addEventListener("click", (e) => {
   renderEditor();
 });
 $("#accentKeys").addEventListener("change", (e) => draft.accentKeys = e.target.value);
+$("#stripeRows").addEventListener("change", (e) => { draft.stripeRows = e.target.checked; });
 $("#startFrom").addEventListener("change", (e) => loadDraft(e.target.value));
 
 function draftTheme() {

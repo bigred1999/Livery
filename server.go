@@ -119,8 +119,8 @@ func validTheme(t *ThemeDef) error {
 		}
 		*c = strings.ToUpper(*c)
 	}
-	if len(t.Stripes) > 5 {
-		return fmt.Errorf("at most 5 stripes")
+	if len(t.Stripes) > 8 {
+		return fmt.Errorf("at most 8 stripes")
 	}
 	for i := range t.Stripes {
 		if !hexRe.MatchString(t.Stripes[i]) {
@@ -365,7 +365,7 @@ func startPanel() {
 	// Keyboard screen animations (Ajazz AK820 Pro).
 	mux.HandleFunc("/api/screen/preview", guard(func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
-		sc := ScreenSettings{Model: q.Get("model"), Body: q.Get("body"), Accent: q.Get("accent"), Glow: q.Get("glow")}
+		sc := ScreenSettings{Model: q.Get("model"), Body: q.Get("body"), Accent: q.Get("accent"), Glow: q.Get("glow"), Flag: q.Get("flag")}
 		b, err := ScreenPreviewPNG(sc)
 		if err != nil {
 			http.Error(w, err.Error(), 400)

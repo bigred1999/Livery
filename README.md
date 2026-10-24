@@ -6,15 +6,16 @@ Livery is a single `.exe` with no installer. It runs quietly in the background, 
 
 ## Features
 
-- **33 built-in liveries in six motorsport categories**, named after colors rather than teams or sponsors:
+- **39 built-in liveries in seven categories**, named after colors rather than teams or sponsors:
   - *Italian Superbikes*: Rosso, Rosso Grafite, Tricolore, Winter Test, Verde Arancio, Giallo, Rally
   - *Group B Rally*: Turin Stripes, Blue & Gold, Turbo White, Night Stage, Tarmac Red
   - *Formula 1*: British Racing Green, Papaya, Silver & Teal, Black & Gold, Scarlet & Yellow, French Racing Blue, Midnight Blue
   - *Endurance*: Powder Blue & Orange, Purple & White, White, Navy & Gold, Endurance Night
   - *Expedition & Off-road*: Expedition Yellow, Desert Raid, Safari Green, Ice Raid
   - *Choppers & Customs*: Flame Job, Chrome & Black, Candy Apple, Black & Orange, Candy Purple, Stars & Stripes
+  - *Pride*: Rainbow, Trans, Bi, Pan, Lesbian and Nonbinary flags, painted one stripe per key row on per-key keyboards
 - **Wi-Fi smart bulbs**: Feit Electric and other Tuya-based bulbs and light strips follow your livery, controlled directly on your home network.
-- **Keyboard screen animations** (Ajazz AK820 Pro): a spinning street coupe, tuner sedan with underglow, or superbike on a neon grid, in colors you pick.
+- **Keyboard screen animations** (Ajazz AK820 Pro): a spinning street coupe, tuner sedan with underglow, or superbike on a neon grid in colors you pick, or a waving Pride flag.
 - **Updates in place**: Livery checks GitHub once a day and installs new releases with one click, keeping your settings.
 - **Build your own**: main and accent colors, accent keys (WASD, arrows, function row), left-to-right stripes, per-light colors for laptop chassis lights and mice.
 - **Effects with speed and intensity controls**: Static, Breathe, Flicker (failing-neon stutter, in sync across devices), Strobe, Wave (the livery rolls across your setup, either direction), Redline (a rev counter with limiter flash) and Sparkle. Livery animates the Alienware keyboard and chassis lights and every OpenRGB device itself; devices that store lighting in their own memory or run on battery use their built-in breathing/wave or stay on the livery colors, and the power button is never animated. The panel shows a live preview.

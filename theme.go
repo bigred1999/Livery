@@ -51,14 +51,15 @@ type ThemeDef struct {
 	Description string   `json:"description"`
 	Category    string   `json:"category,omitempty"` // built-ins only; custom themes are grouped as "Your liveries"
 	Builtin     bool     `json:"builtin"`
-	Base        string   `json:"base"`       // main color everywhere
-	Accent      string   `json:"accent"`     // accent keys / accent zones
-	AccentKeys  string   `json:"accentKeys"` // none | wasd-arrows | wasd | arrows | function-row
-	Stripes     []string `json:"stripes"`    // optional: colors painted left-to-right instead of base
-	RearLeft    string   `json:"rearLeft"`   // laptop rear light bar, left
-	RearRight   string   `json:"rearRight"`  // laptop rear light bar, right
-	Lid         string   `json:"lid"`        // Alien head on the lid
-	Power       string   `json:"power"`      // power button
+	Base        string   `json:"base"`                 // main color everywhere
+	Accent      string   `json:"accent"`               // accent keys / accent zones
+	AccentKeys  string   `json:"accentKeys"`           // none | wasd-arrows | wasd | arrows | function-row
+	Stripes     []string `json:"stripes"`              // optional: colors painted left-to-right instead of base
+	StripeRows  bool     `json:"stripeRows,omitempty"` // paint the stripes top-to-bottom (like a flag) where the device has rows
+	RearLeft    string   `json:"rearLeft"`             // laptop rear light bar, left
+	RearRight   string   `json:"rearRight"`            // laptop rear light bar, right
+	Lid         string   `json:"lid"`                  // Alien head on the lid
+	Power       string   `json:"power"`                // power button
 	MouseLogo   string   `json:"mouseLogo"`
 	MouseSide   string   `json:"mouseSide"`
 	GMBKAccent  []int    `json:"gmbkAccentZones"` // 1..10 columns that get the accent color
@@ -193,6 +194,20 @@ var BuiltinThemes = []ThemeDef{
 	solid(catExpedition, "ice-raid", "Ice Raid", "Ice blue with high-visibility orange.",
 		hexIce, hexOrange, hexOrange, hexIce, 1, 10),
 
+	// ---- Pride ----
+	pride(catPride, "rainbow-pride", "Rainbow Pride", "The six-stripe rainbow flag, one color per key row. Try it with Wave.",
+		hexPrideRed, hexPrideOrange, hexPrideYellow, hexPrideGreen, hexPrideBlue, hexPrideViolet),
+	pride(catPride, "trans-pride", "Trans Pride", "Light blue, pink and white.",
+		hexTransBlue, hexTransPink, hexWarmWhite, hexTransPink, hexTransBlue),
+	pride(catPride, "bi-pride", "Bi Pride", "Magenta, purple and blue.",
+		hexBiPink, hexBiPink, hexBiPurple, hexBiBlue, hexBiBlue),
+	pride(catPride, "pan-pride", "Pan Pride", "Pink, yellow and cyan.",
+		hexPanPink, hexPanYellow, hexPanCyan),
+	pride(catPride, "lesbian-pride", "Lesbian Pride", "Sunset oranges through white to pinks.",
+		hexLesOrange, hexLesLight, hexWarmWhite, hexLesPink, hexLesRose),
+	pride(catPride, "nonbinary-pride", "Nonbinary Pride", "Yellow, white, purple and black.",
+		hexNbYellow, hexWarmWhite, hexNbPurple, hexAlu),
+
 	// ---- Choppers & customs ----
 	{
 		ID: "flame-job", Name: "Flame Job", Builtin: true, Category: catChoppers,
@@ -228,6 +243,7 @@ const (
 	catEndurance  = "Endurance"
 	catExpedition = "Expedition & Off-road"
 	catChoppers   = "Choppers & Customs"
+	catPride      = "Pride"
 )
 
 // More paint colors (chosen to look right on RGB LEDs, so some are brighter
@@ -262,7 +278,42 @@ const (
 	hexFlameRed    = "#FF2000"
 	hexCandyRed    = "#C80018"
 	hexChrome      = "#C8D2DC"
+
+	// Pride flag colors, tuned for LEDs
+	hexPrideRed    = "#FF0018"
+	hexPrideOrange = "#FF7A00"
+	hexPrideYellow = "#FFE600"
+	hexPrideGreen  = "#00C832"
+	hexPrideBlue   = "#0050FF"
+	hexPrideViolet = "#8C00FF"
+	hexTransBlue   = "#3CC8FF"
+	hexTransPink   = "#FF6EA0"
+	hexBiPink      = "#E6006E"
+	hexBiPurple    = "#9B3CB4"
+	hexBiBlue      = "#0038C8"
+	hexPanPink     = "#FF1E8C"
+	hexPanYellow   = "#FFD800"
+	hexPanCyan     = "#1EB4FF"
+	hexLesOrange   = "#E63C00"
+	hexLesLight    = "#FF8C50"
+	hexLesPink     = "#E650A0"
+	hexLesRose     = "#B4005A"
+	hexNbYellow    = "#FFE600"
+	hexNbPurple    = "#9B4BE6"
 )
+
+// pride builds a flag livery: stripes in rows (top to bottom) where a device
+// has rows, left to right elsewhere; chassis lights take the outer stripes.
+func pride(cat, id, name, desc string, stripes ...string) ThemeDef {
+	mid := stripes[len(stripes)/2]
+	return ThemeDef{
+		ID: id, Name: name, Description: desc, Builtin: true, Category: cat,
+		Base: mid, Accent: stripes[0], AccentKeys: "none",
+		Stripes: stripes, StripeRows: true,
+		RearLeft: stripes[0], RearRight: stripes[len(stripes)-1], Lid: mid, Power: stripes[0],
+		MouseLogo: stripes[0], MouseSide: stripes[len(stripes)-1],
+	}
+}
 
 // solid builds the common two-color livery: base keys, accent WASD + arrows,
 // chassis lights in one color, the lid logo in another, and accent GMBK columns.
@@ -316,7 +367,11 @@ func (t ThemeDef) Resolve(brightness int) Resolved {
 	}
 	for id, x := range m18KeyX {
 		c := base
-		if s, ok := t.stripeAt(x); ok {
+		pos := x
+		if t.StripeRows {
+			pos = m18KeyY[id]
+		}
+		if s, ok := t.stripeAt(pos); ok {
 			c = s.Scale(f)
 		}
 		if accentSet[id] {

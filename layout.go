@@ -22,6 +22,19 @@ var m18KeyX = func() map[byte]float64 {
 	return m
 }()
 
+// m18KeyY maps each key id to the middle of its row as a fraction of the
+// keyboard's height (top row ~0.08 .. bottom row ~0.92), so flag stripes
+// split evenly across the rows.
+var m18KeyY = func() map[byte]float64 {
+	m := map[byte]float64{}
+	for r, row := range m18Rows {
+		for _, id := range row {
+			m[id] = (float64(r) + 0.5) / float64(len(m18Rows))
+		}
+	}
+	return m
+}()
+
 var accentKeySets = map[string][]byte{
 	"none":         nil,
 	"wasd-arrows":  {43, 62, 63, 64, 114, 133, 134, 135},

@@ -23,21 +23,38 @@ const (
 
 // ScreenSettings is what the panel's "Keyboard screen" box sends.
 type ScreenSettings struct {
-	Model  string `json:"model"`  // coupe | sedan | bike
-	Body   string `json:"body"`   // main paint
-	Accent string `json:"accent"` // stripes, wing, wheels trim
-	Glow   string `json:"glow"`   // grid and underglow
+	Model  string `json:"model"`          // coupe | sedan | bike
+	Body   string `json:"body"`           // main paint
+	Accent string `json:"accent"`         // stripes, wing, wheels trim
+	Glow   string `json:"glow"`           // grid and underglow
+	Flag   string `json:"flag,omitempty"` // which flag, for the "flag" model
+}
+
+// Flags for the waving-flag animation, stripes top to bottom (screen colors).
+var screenFlags = map[string][]string{
+	"rainbow":   {"#E40303", "#FF8C00", "#FFED00", "#008026", "#004CFF", "#732982"},
+	"trans":     {"#5BCEFA", "#F5A9B8", "#FFFFFF", "#F5A9B8", "#5BCEFA"},
+	"bi":        {"#D60270", "#D60270", "#9B4F96", "#0038A8", "#0038A8"},
+	"pan":       {"#FF218C", "#FFD800", "#21B1FF"},
+	"lesbian":   {"#D52D00", "#FF9A56", "#FFFFFF", "#D362A4", "#A30262"},
+	"nonbinary": {"#FCF434", "#FFFFFF", "#9C59D1", "#2C2C2C"},
 }
 
 var screenModels = map[string]string{
 	"coupe": "Street coupe",
 	"sedan": "Tuner sedan",
 	"bike":  "Superbike",
+	"flag":  "Pride flag",
 }
 
 func (sc *ScreenSettings) normalize() error {
 	if _, ok := screenModels[sc.Model]; !ok {
 		return errors.New("unknown model")
+	}
+	if sc.Model == "flag" {
+		if _, ok := screenFlags[sc.Flag]; !ok {
+			sc.Flag = "rainbow"
+		}
 	}
 	for _, c := range []*string{&sc.Body, &sc.Accent, &sc.Glow} {
 		if _, err := ParseHex(*c); err != nil {
@@ -416,6 +433,18 @@ func RenderScreenFrames(sc ScreenSettings) ([]*image.RGBA, error) {
 		m = coupeMesh(body, accent)
 	}
 	frames := make([]*image.RGBA, screenFrames)
+	if sc.Model == "flag" {
+		var stripes []vec3
+		for _, h := range screenFlags[sc.Flag] {
+			stripes = append(stripes, hexVec(h))
+		}
+		for i := range frames {
+			c := newCanvas(screenSize * screenSS)
+			c.flagScene(stripes, 2*math.Pi*float64(i)/screenFrames, i)
+			frames[i] = c.downsample()
+		}
+		return frames, nil
+	}
 	for i := range frames {
 		c := newCanvas(screenSize * screenSS)
 		phase := math.Mod(float64(i)*3/float64(screenFrames), 1)
@@ -432,6 +461,52 @@ func RenderScreenFrames(sc ScreenSettings) ([]*image.RGBA, error) {
 		frames[i] = c.downsample()
 	}
 	return frames, nil
+}
+
+// flagScene draws a flag waving from a pole against a night sky with a
+// few twinkling stars. phase loops over 2*pi so the animation repeats cleanly.
+func (c *canvas) flagScene(stripes []vec3, phase float64, frame int) {
+	w := float64(c.w)
+	for y := 0; y < c.w; y++ {
+		t := float64(y) / w
+		col := vec3{10 + 14*t, 8 + 10*t, 22 + 26*t}
+		for x := 0; x < c.w; x++ {
+			c.pix[y*c.w+x] = col
+		}
+	}
+	// stars: fixed positions, each twinkling on its own beat
+	for i := uint32(0); i < 22; i++ {
+		sx, sy := rand01(i, 11)*w, rand01(i, 12)*w
+		tw := 0.35 + 0.65*(0.5+0.5*math.Sin(phase*float64(1+i%3)+6.28*rand01(i, 13)))
+		r := float64(screenSS) * (0.5 + rand01(i, 14))
+		c.fillPoly(ellipse(sx, sy, r, r), vec3{255, 255, 255}, 0.55*tw)
+	}
+	// pole
+	poleX := 0.13 * w
+	c.fillPoly([][2]float64{{poleX - 1.2*screenSS, 0.12 * w}, {poleX + 1.2*screenSS, 0.12 * w}, {poleX + 1.2*screenSS, 0.95 * w}, {poleX - 1.2*screenSS, 0.95 * w}}, vec3{190, 196, 206}, 1)
+	c.fillPoly(ellipse(poleX, 0.12*w, 2.6*screenSS, 2.6*screenSS), vec3{230, 200, 90}, 1)
+	// flag: one vertical slice per pixel column, displaced by a travelling wave
+	// that grows away from the pole; slope gives the light and shadow.
+	left, width := poleX+1.2*screenSS, 0.78*w
+	top, height := 0.17*w, 0.5*w
+	n := len(stripes)
+	for px := 0; px < int(width); px++ {
+		u := float64(px) / width
+		amp := 0.055 * w * (0.15 + 0.85*u)
+		k := 2 * math.Pi * 1.35
+		dy := amp * math.Sin(k*u-phase)
+		slope := math.Cos(k*u - phase)
+		shade := 0.86 + 0.2*slope
+		x := left + float64(px)
+		y0 := top + dy
+		for i, sc := range stripes {
+			a := y0 + height*float64(i)/float64(n)
+			b := y0 + height*float64(i+1)/float64(n)
+			col := sc.mul(shade)
+			c.fillPoly([][2]float64{{x, a}, {x + 1, a}, {x + 1, b + 0.5}, {x, b + 0.5}}, col, 1)
+		}
+	}
+	_ = frame
 }
 
 func ellipse(cx, cy, rx, ry float64) [][2]float64 {
