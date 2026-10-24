@@ -6,12 +6,13 @@ Livery is a single `.exe` with no installer. It runs quietly in the background, 
 
 ## Features
 
-- **27 built-in liveries in five motorsport categories**, named after colors rather than teams or sponsors:
+- **33 built-in liveries in six motorsport categories**, named after colors rather than teams or sponsors:
   - *Italian Superbikes*: Rosso, Rosso Grafite, Tricolore, Winter Test, Verde Arancio, Giallo, Rally
   - *Group B Rally*: Turin Stripes, Blue & Gold, Turbo White, Night Stage, Tarmac Red
   - *Formula 1*: British Racing Green, Papaya, Silver & Teal, Black & Gold, Scarlet & Yellow, French Racing Blue, Midnight Blue
   - *Endurance*: Powder Blue & Orange, Purple & White, White, Navy & Gold, Endurance Night
   - *Expedition & Off-road*: Expedition Yellow, Desert Raid, Safari Green, Ice Raid
+  - *Choppers & Customs*: Flame Job, Chrome & Black, Candy Apple, Black & Orange, Candy Purple, Stars & Stripes
 - **Wi-Fi smart bulbs**: Feit Electric and other Tuya-based bulbs and light strips follow your livery, controlled directly on your home network.
 - **Keyboard screen animations** (Ajazz AK820 Pro): a spinning street coupe, tuner sedan with underglow, or superbike on a neon grid, in colors you pick.
 - **Updates in place**: Livery checks GitHub once a day and installs new releases with one click, keeping your settings.

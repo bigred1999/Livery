@@ -192,6 +192,32 @@ var BuiltinThemes = []ThemeDef{
 		hexOlive, hexTan, hexOlive, hexTan, 1, 10),
 	solid(catExpedition, "ice-raid", "Ice Raid", "Ice blue with high-visibility orange.",
 		hexIce, hexOrange, hexOrange, hexIce, 1, 10),
+
+	// ---- Choppers & customs ----
+	{
+		ID: "flame-job", Name: "Flame Job", Builtin: true, Category: catChoppers,
+		Description: "Hot-rod flames licking across the keys: yellow, orange and red.",
+		Base:        hexFlameOrange, Accent: hexFlameYellow, AccentKeys: "none",
+		Stripes:  []string{hexFlameYellow, hexFlameOrange, hexFlameRed, hexCandyRed},
+		RearLeft: hexFlameRed, RearRight: hexFlameRed, Lid: hexFlameYellow, Power: hexFlameOrange,
+		MouseLogo: hexFlameYellow, MouseSide: hexFlameRed,
+	},
+	solid(catChoppers, "chrome-black", "Chrome & Black", "Gloss black tins with polished chrome details.",
+		hexAlu, hexChrome, hexChrome, hexChrome, 1, 10),
+	solid(catChoppers, "candy-apple", "Candy Apple", "Deep candy red with gold pinstriping.",
+		hexCandyRed, hexGold, hexCandyRed, hexGold, 10),
+	solid(catChoppers, "black-orange", "Black & Orange", "Classic V-twin black with bright orange.",
+		hexAlu, hexOrange, hexOrange, hexOrange, 1, 10),
+	solid(catChoppers, "candy-purple", "Candy Purple", "Metal-flake purple with chrome highlights.",
+		hexPurple, hexChrome, hexPurple, hexChrome, 10),
+	{
+		ID: "stars-stripes", Name: "Stars & Stripes", Builtin: true, Category: catChoppers,
+		Description: "Open-road red, white and blue painted across the keys.",
+		Base:        hexWarmWhite, Accent: hexWarmWhite, AccentKeys: "none",
+		Stripes:  []string{hexNavy, hexWarmWhite, hexScarlet},
+		RearLeft: hexNavy, RearRight: hexScarlet, Lid: hexWarmWhite, Power: hexScarlet,
+		MouseLogo: hexScarlet, MouseSide: hexNavy,
+	},
 }
 
 // Theme categories, in display order.
@@ -201,35 +227,41 @@ const (
 	catF1         = "Formula 1"
 	catEndurance  = "Endurance"
 	catExpedition = "Expedition & Off-road"
+	catChoppers   = "Choppers & Customs"
 )
 
 // More paint colors (chosen to look right on RGB LEDs, so some are brighter
 // than the paint they're named after).
 const (
-	hexSkyBlue    = "#00A0FF"
-	hexNavy       = "#0A1E9C"
-	hexRallyBlue  = "#0030C8"
-	hexGold       = "#FFB000"
-	hexAmber      = "#FF9A00"
-	hexYellow     = "#FFD200"
-	hexBRG        = "#00662A"
-	hexPapaya     = "#FF6A00"
-	hexElecBlue   = "#00AAFF"
-	hexSilver     = "#B4BECD"
-	hexTeal       = "#00D2B4"
-	hexNearBlack  = "#141418"
-	hexScarlet    = "#E60000"
-	hexFrenchBlue = "#0050FF"
-	hexMidnight   = "#1428A0"
-	hexPowderBlue = "#50B4FF"
-	hexPurple     = "#7800DC"
-	hexHeadlight  = "#FFE650"
-	hexSandYellow = "#FFB400"
-	hexJungle     = "#1E8C28"
-	hexSand       = "#FFB464"
-	hexOlive      = "#507814"
-	hexTan        = "#FFC88C"
-	hexIce        = "#B4E6FF"
+	hexSkyBlue     = "#00A0FF"
+	hexNavy        = "#0A1E9C"
+	hexRallyBlue   = "#0030C8"
+	hexGold        = "#FFB000"
+	hexAmber       = "#FF9A00"
+	hexYellow      = "#FFD200"
+	hexBRG         = "#00662A"
+	hexPapaya      = "#FF6A00"
+	hexElecBlue    = "#00AAFF"
+	hexSilver      = "#B4BECD"
+	hexTeal        = "#00D2B4"
+	hexNearBlack   = "#141418"
+	hexScarlet     = "#E60000"
+	hexFrenchBlue  = "#0050FF"
+	hexMidnight    = "#1428A0"
+	hexPowderBlue  = "#50B4FF"
+	hexPurple      = "#7800DC"
+	hexHeadlight   = "#FFE650"
+	hexSandYellow  = "#FFB400"
+	hexJungle      = "#1E8C28"
+	hexSand        = "#FFB464"
+	hexOlive       = "#507814"
+	hexTan         = "#FFC88C"
+	hexIce         = "#B4E6FF"
+	hexFlameYellow = "#FFD200"
+	hexFlameOrange = "#FF7800"
+	hexFlameRed    = "#FF2000"
+	hexCandyRed    = "#C80018"
+	hexChrome      = "#C8D2DC"
 )
 
 // solid builds the common two-color livery: base keys, accent WASD + arrows,
