@@ -123,6 +123,7 @@ func runBackground() {
 		applyGMBK(all, r, s)
 		st := applyOpenRGB(t, s)
 		setStatus(func(d *DeviceStatus) { d.OpenRGB = st })
+		applyBulbs(t, s)
 		if rx == nil && have.receiver {
 			rx, _ = OpenReceiver(all, logf)
 		}

@@ -58,6 +58,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## TinyTuya (protocol reference only)
+
+`tuya.go` and `tuyacloud.go` are an independent Go implementation of the Tuya local protocol (3.1 to 3.5) and the Tuya OpenAPI request signing, written from the protocol notes in TinyTuya (https://github.com/jasonacox/tinytuya, MIT License, Copyright (c) 2024 Jason Cox). No TinyTuya code is included in Livery; `testdata/tuya_fakebulb.py` uses the TinyTuya package from PyPI to test Livery against it.
+
 ## OpenRGB (protocol reference only)
 
 `openrgb.go` is an independent implementation of the OpenRGB SDK network protocol, and `logitech.go` implements Logitech HID++ 2.0 RGB features; the OpenRGB project (https://openrgb.org, GPL-2.0) was consulted as documentation for both. No OpenRGB source code is included in Livery.

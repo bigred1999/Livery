@@ -72,7 +72,7 @@ func liveryDirs() []string {
 	}
 	if k, err := registry.OpenKey(registry.CURRENT_USER, runKeyPath, registry.QUERY_VALUE); err == nil {
 		if v, _, err := k.GetStringValue(runValueName); err == nil {
-			exe := strings.Trim(strings.Fields(strings.TrimSpace(v)+" ")[0], `"`)
+			exe := strings.Trim(strings.Fields(strings.TrimSpace(v) + " ")[0], `"`)
 			if strings.HasPrefix(strings.TrimSpace(v), `"`) {
 				if i := strings.Index(v[1:], `"`); i >= 0 {
 					exe = v[1 : i+1]

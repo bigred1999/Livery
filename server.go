@@ -22,6 +22,7 @@ type stateResponse struct {
 	Settings  Settings     `json:"settings"`
 	Status    DeviceStatus `json:"status"`
 	Autostart bool         `json:"autostart"`
+	Bulbs     tuyaView     `json:"bulbs"`
 }
 
 func buildState() stateResponse {
@@ -34,6 +35,7 @@ func buildState() stateResponse {
 		Settings:  cfg.Settings,
 		Status:    getStatus(),
 		Autostart: autostartEnabled(),
+		Bulbs:     buildTuyaView(cfg),
 	}
 }
 
@@ -141,6 +143,8 @@ func startPanel() {
 	}))
 	// Apply settings (theme id, brightness, effect, speed) and save them.
 	mux.HandleFunc("/api/apply", guard(func(w http.ResponseWriter, r *http.Request) {
+		cfgEdit.Lock() // config read-modify-write (see updateConfig)
+		defer cfgEdit.Unlock()
 		var s Settings
 		if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 			http.Error(w, err.Error(), 400)
@@ -162,6 +166,8 @@ func startPanel() {
 	}))
 	// Save (create or update) a custom theme, optionally applying it.
 	mux.HandleFunc("/api/themes/save", guard(func(w http.ResponseWriter, r *http.Request) {
+		cfgEdit.Lock() // config read-modify-write (see updateConfig)
+		defer cfgEdit.Unlock()
 		var body struct {
 			Theme ThemeDef `json:"theme"`
 			Apply bool     `json:"apply"`
@@ -206,6 +212,8 @@ func startPanel() {
 		writeJSON(w, buildState())
 	}))
 	mux.HandleFunc("/api/themes/delete", guard(func(w http.ResponseWriter, r *http.Request) {
+		cfgEdit.Lock() // config read-modify-write (see updateConfig)
+		defer cfgEdit.Unlock()
 		var body struct {
 			ID string `json:"id"`
 		}
@@ -234,6 +242,8 @@ func startPanel() {
 	}))
 	// Preview a theme without saving it.
 	mux.HandleFunc("/api/preview", guard(func(w http.ResponseWriter, r *http.Request) {
+		cfgEdit.Lock() // config read-modify-write (see updateConfig)
+		defer cfgEdit.Unlock()
 		var t ThemeDef
 		if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
 			http.Error(w, err.Error(), 400)
@@ -258,6 +268,74 @@ func startPanel() {
 		cfg.Settings.ThemeID = t.ID
 		saveConfig(cfg)
 		requestApply()
+		writeJSON(w, buildState())
+	}))
+	// Smart bulbs (Tuya / Feit Electric and friends).
+	mux.HandleFunc("/api/bulbs/connect", guard(func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			Region   string `json:"region"`
+			AccessID string `json:"accessId"`
+			Secret   string `json:"accessSecret"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		n, err := connectTuyaCloud(body.Region, body.AccessID, body.Secret)
+		if err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		if n == 0 {
+			http.Error(w, "Connected, but no lights are linked to this cloud project yet. In the Tuya developer site open your project > Devices > Link App Account and scan the QR code with the Smart Life app.", 400)
+			return
+		}
+		go func() {
+			lastFind = time.Now()
+			findBulbs()
+			requestApply()
+		}()
+		writeJSON(w, buildState())
+	}))
+	mux.HandleFunc("/api/bulbs/update", guard(func(w http.ResponseWriter, r *http.Request) {
+		var body struct {
+			ID      string `json:"id"`
+			Enabled *bool  `json:"enabled"`
+			Role    string `json:"role"`
+		}
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			http.Error(w, err.Error(), 400)
+			return
+		}
+		updateConfig(func(c *Config) {
+			for i := range c.Tuya.Bulbs {
+				if c.Tuya.Bulbs[i].ID != body.ID {
+					continue
+				}
+				if body.Enabled != nil {
+					c.Tuya.Bulbs[i].Enabled = *body.Enabled
+				}
+				switch body.Role {
+				case "auto", "main", "accent":
+					c.Tuya.Bulbs[i].Role = body.Role
+				}
+			}
+		})
+		go requestApply()
+		writeJSON(w, buildState())
+	}))
+	mux.HandleFunc("/api/bulbs/find", guard(func(w http.ResponseWriter, r *http.Request) {
+		go func() {
+			lastFind = time.Now()
+			findBulbs()
+			requestApply()
+		}()
+		time.Sleep(300 * time.Millisecond)
+		writeJSON(w, buildState())
+	}))
+	mux.HandleFunc("/api/bulbs/forget", guard(func(w http.ResponseWriter, r *http.Request) {
+		updateConfig(func(c *Config) { c.Tuya = TuyaConfig{} })
+		logf("smart bulbs: setup removed")
 		writeJSON(w, buildState())
 	}))
 	mux.HandleFunc("/api/probe", guard(probeHandler))

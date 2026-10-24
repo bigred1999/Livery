@@ -56,7 +56,7 @@ type DeviceStatus struct {
 	OpenRGB string `json:"openrgb"`
 	// Names of the devices Livery painted through OpenRGB.
 	OpenRGBDevices []string `json:"openrgbDevices"`
-	At      string `json:"at"`
+	At             string   `json:"at"`
 }
 
 var forcePower bool // set by the "power" command to rewrite even if unchanged

@@ -85,6 +85,15 @@
   .zones button.on { background: var(--red); border-color: var(--red); color: #fff; }
   .stripes { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .stripes input[type=color] { width: 34px; height: 28px; border: 0; background: none; padding: 0; cursor: pointer; }
+  .bulbform { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; align-items: end; margin-top: 14px; }
+  .bulbform input[type=text], .bulbform input[type=password] { width: 100%; box-sizing: border-box; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; font: inherit; }
+  .steps { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: 14px; line-height: 1.7; }
+  .steps a, .muted a { color: var(--text); }
+  .bulbs { display: flex; flex-direction: column; gap: 8px; }
+  .bulb { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; }
+  .bulb .name { flex: 1; min-width: 160px; }
+  .bulb .name small { display: block; color: var(--muted); font-size: 12px; }
+  details.others summary { cursor: pointer; color: var(--muted); font-size: 13px; margin: 10px 0 6px; }
   .editor-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; align-items: center; }
   .toggle { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
   .switch { position: relative; width: 46px; height: 26px; flex: none; }
@@ -165,6 +174,9 @@
       <span class="muted" id="editNote"></span>
     </div>
   </div>
+
+  <h2>Smart bulbs</h2>
+  <div class="panel" id="bulbPanel"></div>
 
   <h2>Startup</h2>
   <div class="panel toggle">
@@ -269,6 +281,7 @@ function render() {
   const orgb = st.openrgbDevices || [];
   if (orgb.length) chips = chips.concat(orgb.map((n) => statusChip(n, "ok, via OpenRGB")));
   else if (st.openrgb && !String(st.openrgb).includes("none extra")) chips.push(statusChip("OpenRGB", st.openrgb));
+  ((state.bulbs && state.bulbs.bulbs) || []).filter((b) => b.enabled && b.status === "ok").forEach((b) => chips.push(statusChip(b.name, "ok, Wi-Fi bulb")));
   if (!chips.length) chips.push(statusChip("Looking for lights", ""));
   $("#chips").innerHTML = chips.join("");
   const hint = !orgb.length && /not installed|not running|server is off/.test(st.openrgb || "");
@@ -306,7 +319,84 @@ function render() {
   sf.innerHTML = cats.map((c) => `<optgroup label="${esc(c)}">${list.filter((t) => catOf(t) === c).map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("")}</optgroup>`).join("");
   sf.value = keep && list.some((t) => t.id === keep) ? keep : s.themeId;
   if (!draft) loadDraft(sf.value);
+  renderBulbs();
 }
+
+// --- smart bulbs (Tuya / Feit Electric) ----------------------------------------
+const REGIONS = [["us", "Americas (West)"], ["us-e", "Americas (East)"], ["eu", "Europe (Central)"], ["eu-w", "Europe (West)"], ["in", "India"], ["sg", "Singapore"], ["cn", "China"]];
+let bulbFormOpen = false, bulbFormKey = "";
+function bulbDot(st) { return st === "ok" ? "ok" : st ? "warn" : ""; }
+function bulbRow(b) {
+  const st = !b.enabled ? "off" : b.status === "ok" ? "synced" : b.status || (b.ip ? "waiting" : "not located yet");
+  return `<div class="bulb" data-bulb="${esc(b.id)}">
+    <span class="dot ${b.enabled ? bulbDot(b.status) : ""}"></span>
+    <div class="name">${esc(b.name)}<small>${esc(st)}${b.ip ? " · " + esc(b.ip) : ""}</small></div>
+    ${b.light ? `<select data-role title="Which livery color this bulb shows">
+      <option value="auto"${b.role === "auto" ? " selected" : ""}>Auto (spread colors)</option>
+      <option value="main"${b.role === "main" ? " selected" : ""}>Main color</option>
+      <option value="accent"${b.role === "accent" ? " selected" : ""}>Accent color</option></select>` : ""}
+    <label class="switch" title="Paint this device"><input type="checkbox" data-enable${b.enabled ? " checked" : ""}><span></span></label>
+  </div>`;
+}
+function bulbFormHTML(v) {
+  return `<div class="bulbform">
+    <label class="field">Data center<select id="bRegion">${REGIONS.map(([k, n]) => `<option value="${k}"${(v.region || "us") === k ? " selected" : ""}>${n}</option>`).join("")}</select></label>
+    <label class="field">Access ID<input type="text" id="bId" autocomplete="off" spellcheck="false" value="${esc(v.accessId || "")}"></label>
+    <label class="field">Access Secret<input type="password" id="bSecret" autocomplete="off" placeholder="${v.configured ? "saved (leave blank to keep)" : ""}"></label>
+    <div class="field"><button class="btn primary" id="bConnect">Connect and find bulbs</button></div>
+  </div>`;
+}
+function renderBulbs() {
+  const v = state.bulbs || { bulbs: [] };
+  const key = JSON.stringify(v) + bulbFormOpen;
+  if (key === bulbFormKey || (document.activeElement && document.activeElement.closest && document.activeElement.closest(".bulbform"))) return;
+  bulbFormKey = key;
+  const lights = (v.bulbs || []).filter((b) => b.light), others = (v.bulbs || []).filter((b) => !b.light);
+  if (!v.configured) {
+    $("#bulbPanel").innerHTML = `
+      <div>Paint Wi-Fi smart bulbs and light strips (Feit Electric and other Tuya-based brands) with your livery. Livery talks to them directly on your network.</div>
+      <ol class="steps">
+        <li>Add your bulbs to the <b>Smart Life</b> app (it's Tuya's own app; bulbs set up in the Feit app can be added there too).</li>
+        <li>Create a free account at <a href="https://platform.tuya.com" target="_blank" rel="noopener">platform.tuya.com</a>, then <b>Cloud &rarr; Development &rarr; Create Cloud Project</b> (pick the data center for your country).</li>
+        <li>In the project, open <b>Devices &rarr; Link App Account</b> and scan the QR code with Smart Life (<b>Me &rarr; scan icon</b>).</li>
+        <li>Copy the project's <b>Access ID</b> and <b>Access Secret</b> from its Overview page into the boxes below.</li>
+      </ol>
+      <div class="muted" style="margin-top:8px">Livery uses the cloud only to read each bulb's local key; after that, colors are sent straight to the bulbs. The secret is stored encrypted for your Windows account.</div>
+      ${bulbFormHTML(v)}`;
+    return;
+  }
+  $("#bulbPanel").innerHTML = `
+    <div class="bulbs">${lights.length ? lights.map(bulbRow).join("") : `<div class="muted">No lights in this Tuya project yet.</div>`}</div>
+    ${others.length ? `<details class="others"><summary>Other devices in this project (${others.length})</summary><div class="bulbs">${others.map(bulbRow).join("")}</div></details>` : ""}
+    <div class="editor-actions">
+      <button class="btn" id="bFind"${v.finding ? " disabled" : ""}>${v.finding ? "Searching your network…" : "Search network again"}</button>
+      <button class="btn" id="bEdit">${bulbFormOpen ? "Hide account" : "Refresh from Tuya account"}</button>
+      <button class="btn" id="bForget">Remove bulb setup</button>
+      <span class="muted">Auto spreads a livery's colors across your bulbs (stripes or main/accent).</span>
+    </div>
+    ${bulbFormOpen ? bulbFormHTML(v) : ""}`;
+}
+$("#bulbPanel").addEventListener("click", (e) => {
+  const id = e.target.id;
+  if (id === "bConnect") return run(async () => {
+    toast("Connecting to Tuya…");
+    state = await api("/api/bulbs/connect", { region: $("#bRegion").value, accessId: $("#bId").value.trim(), accessSecret: $("#bSecret").value.trim() });
+    bulbFormOpen = false; bulbFormKey = ""; render(); toast("Connected: searching your network for bulbs");
+  });
+  if (id === "bFind") return run(async () => { state = await api("/api/bulbs/find", {}); bulbFormKey = ""; render(); toast("Searching your network…"); });
+  if (id === "bEdit") { bulbFormOpen = !bulbFormOpen; bulbFormKey = ""; renderBulbs(); return; }
+  if (id === "bForget") {
+    if (!confirm("Remove the bulb setup? Your bulbs keep their current color.")) return;
+    return run(async () => { state = await api("/api/bulbs/forget", {}); bulbFormKey = ""; render(); toast("Bulb setup removed"); });
+  }
+});
+$("#bulbPanel").addEventListener("change", (e) => {
+  const row = e.target.closest("[data-bulb]"); if (!row) return;
+  const body = { id: row.dataset.bulb };
+  if (e.target.matches("[data-enable]")) body.enabled = e.target.checked;
+  if (e.target.matches("[data-role]")) body.role = e.target.value;
+  run(async () => { state = await api("/api/bulbs/update", body); bulbFormKey = ""; render(); });
+});
 function esc(x) { return String(x).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
 
 // --- editor -------------------------------------------------------------------

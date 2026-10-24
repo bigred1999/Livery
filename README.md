@@ -12,6 +12,7 @@ Livery is a single `.exe` with no installer. It runs quietly in the background, 
   - *Formula 1*: British Racing Green, Papaya, Silver & Teal, Black & Gold, Scarlet & Yellow, French Racing Blue, Midnight Blue
   - *Endurance*: Powder Blue & Orange, Purple & White, White, Navy & Gold, Endurance Night
   - *Expedition & Off-road*: Expedition Yellow, Desert Raid, Safari Green, Ice Raid
+- **Wi-Fi smart bulbs**: Feit Electric and other Tuya-based bulbs and light strips follow your livery, controlled directly on your home network.
 - **Build your own**: main and accent colors, accent keys (WASD, arrows, function row), left-to-right stripes, per-light colors for laptop chassis lights and mice.
 - **Brightness** and a synced **Breathe** effect.
 - **Start at login** toggle (a normal per-user startup entry, no admin needed).
@@ -27,6 +28,7 @@ Livery drives some devices itself and hands everything else to OpenRGB.
 | Alienware AW-ELC chassis lights (`187C:0551`): rear "Tron" bar, lid logo, power button | Built in | Power button colors are stored in the controller's power-state slots |
 | Glorious GMBK 75% (`3794:B000` ANSI, `3794:B002` ISO) | Built in | Global color plus 10 column zones; settings are saved on the keyboard |
 | Logitech wireless mice on a Lightspeed receiver with HID++ RGB feature `0x8070` (e.g. G502 Lightspeed) | Built in | Logo and primary zones |
+| Tuya-based Wi-Fi bulbs and strips (Feit Electric, Smart Life, many store brands), protocol 3.1 to 3.5 | Built in, over your Wi-Fi | One-time setup below; each bulb shows the main or accent color, or Auto spreads the livery across bulbs |
 | **Anything OpenRGB supports**: motherboards, RAM, GPUs, fans, LED strips, many keyboards and mice | Through the OpenRGB SDK server | Run OpenRGB with its SDK server on (see below) |
 
 Other Alienware laptops that use the same controllers will probably work for chassis lights. The per-key keyboard map is currently specific to the m18 R2. Device reports and maps are welcome (see *Contributing*).
@@ -48,6 +50,17 @@ Windows SmartScreen may warn that the installer is from an unknown publisher, be
 **Portable use:** `livery.exe` also runs on its own from any folder. It keeps `config.json` and a `logs` folder next to itself.
 
 **OpenRGB:** if OpenRGB is installed but its server isn't running, Livery starts it minimized to the tray with `--server`. If you installed OpenRGB yourself without its service, that's all you need. Livery connects to `127.0.0.1:6742`, and the **OpenRGB** chip in the panel shows how many devices it painted.
+
+### Smart bulbs (Feit Electric and other Tuya bulbs)
+
+Tuya bulbs only accept local commands encrypted with a per-bulb key, which you get once from Tuya's free developer site:
+
+1. Add the bulbs to the **Smart Life** app.
+2. At [platform.tuya.com](https://platform.tuya.com), create a cloud project (Cloud → Development → Create Cloud Project) using your country's data center.
+3. In the project, open **Devices → Link App Account** and scan the QR code with Smart Life.
+4. In Livery's **Smart bulbs** section, enter the project's Access ID and Access Secret and click **Connect and find bulbs**.
+
+Livery reads the keys, finds the bulbs on your network (it only makes outgoing connections to port 6668, so no firewall changes), and from then on talks to them directly. The Access Secret is stored encrypted with Windows DPAPI.
 
 **Avoid two apps fighting over one device.** Close or disable lighting control in vendor apps (Alienware Command Center lighting, iCUE, Synapse, G HUB, Glorious CORE) for the devices Livery manages. Livery skips devices it drives itself when talking to OpenRGB.
 

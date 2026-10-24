@@ -13,6 +13,7 @@ type Config struct {
 	Settings     Settings   `json:"settings"`
 	Custom       []ThemeDef `json:"customThemes"`
 	AppliedPower string     `json:"appliedPowerButton,omitempty"`
+	Tuya         TuyaConfig `json:"smartBulbs,omitempty"`
 }
 
 func appliedPower() string { return loadConfig().AppliedPower }
