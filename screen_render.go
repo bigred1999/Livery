@@ -23,21 +23,26 @@ const (
 
 // ScreenSettings is what the panel's "Keyboard screen" box sends.
 type ScreenSettings struct {
-	Model  string `json:"model"`  // coupe | sedan | bike
-	Body   string `json:"body"`   // main paint
-	Accent string `json:"accent"` // stripes, wing, wheels trim
-	Glow   string `json:"glow"`   // grid and underglow
+	Model  string `json:"model"`         // coupe | sedan | bike
+	Body   string `json:"body"`          // main paint
+	Accent string `json:"accent"`        // stripes, wing, wheels trim
+	Glow   string `json:"glow"`          // grid and underglow
+	Fit    string `json:"fit,omitempty"` // "fill" or "fit", for "image"
 }
 
 var screenModels = map[string]string{
 	"coupe": "Street coupe",
 	"sedan": "Tuner sedan",
 	"bike":  "Superbike",
+	"image": "Your image",
 }
 
 func (sc *ScreenSettings) normalize() error {
 	if _, ok := screenModels[sc.Model]; !ok {
 		return errors.New("unknown model")
+	}
+	if sc.Fit != "fit" {
+		sc.Fit = "fill"
 	}
 	for _, c := range []*string{&sc.Body, &sc.Accent, &sc.Glow} {
 		if _, err := ParseHex(*c); err != nil {
@@ -404,6 +409,10 @@ func RenderScreenFrames(sc ScreenSettings) ([]*image.RGBA, error) {
 	if err := sc.normalize(); err != nil {
 		return nil, err
 	}
+	if sc.Model == "image" {
+		f, _, err := imageScreenFrames(sc.Fit)
+		return f, err
+	}
 	body, accent, glow := hexVec(sc.Body), hexVec(sc.Accent), hexVec(sc.Glow)
 	var m mesh
 	switch sc.Model {
@@ -460,6 +469,16 @@ func rgb565(img *image.RGBA) []byte {
 // duration byte per frame in 5 ms ticks) followed by the frames, padded to
 // whole 4096-byte chunks.
 func ScreenPayload(sc ScreenSettings) ([]byte, error) {
+	if err := sc.normalize(); err != nil {
+		return nil, err
+	}
+	if sc.Model == "image" {
+		frames, delays, err := imageScreenFrames(sc.Fit)
+		if err != nil {
+			return nil, err
+		}
+		return buildScreenPayloadDelays(frames, delays), nil
+	}
 	frames, err := RenderScreenFrames(sc)
 	if err != nil {
 		return nil, err
@@ -468,11 +487,21 @@ func ScreenPayload(sc ScreenSettings) ([]byte, error) {
 }
 
 func buildScreenPayload(frames []*image.RGBA, frameMS int) []byte {
+	d := make([]int, len(frames))
+	for i := range d {
+		d[i] = frameMS
+	}
+	return buildScreenPayloadDelays(frames, d)
+}
+
+// buildScreenPayloadDelays uses one duration per frame (ms). The keyboard
+// counts in 5 ms ticks, 16..255 (80 ms .. 1.275 s per frame).
+func buildScreenPayloadDelays(frames []*image.RGBA, delays []int) []byte {
 	hdr := make([]byte, 256)
 	hdr[0] = byte(len(frames))
 	for i := range frames {
 		if 1+i < 256 {
-			hdr[1+i] = byte(min(255, max(16, frameMS/5)))
+			hdr[1+i] = byte(min(255, max(16, delays[i]/5)))
 		}
 	}
 	p := append([]byte{}, hdr...)

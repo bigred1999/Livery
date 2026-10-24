@@ -367,7 +367,7 @@ func startPanel() {
 	// Keyboard screen animations (Ajazz AK820 Pro).
 	mux.HandleFunc("/api/screen/preview", guard(func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
-		sc := ScreenSettings{Model: q.Get("model"), Body: q.Get("body"), Accent: q.Get("accent"), Glow: q.Get("glow")}
+		sc := ScreenSettings{Model: q.Get("model"), Body: q.Get("body"), Accent: q.Get("accent"), Glow: q.Get("glow"), Fit: q.Get("fit")}
 		b, err := ScreenPreviewPNG(sc)
 		if err != nil {
 			http.Error(w, err.Error(), 400)
@@ -377,6 +377,7 @@ func startPanel() {
 		w.Header().Set("Cache-Control", "max-age=3600")
 		w.Write(b)
 	}))
+	mux.HandleFunc("/api/screen/image", guard(screenImageHandler))
 	mux.HandleFunc("/api/screen/upload", guard(func(w http.ResponseWriter, r *http.Request) {
 		var sc ScreenSettings
 		if err := json.NewDecoder(r.Body).Decode(&sc); err != nil {

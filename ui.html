@@ -90,6 +90,8 @@
   .screenbox { display: flex; gap: 22px; align-items: center; flex-wrap: wrap; }
   #scrPrev { width: 256px; height: 256px; image-rendering: pixelated; border-radius: 12px; border: 1px solid var(--border); background: #000; }
   .screenctl { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
+  .scrimage { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .scrimage[hidden], .scrcolors[hidden] { display: none; }
   .scrcolors { display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); gap: 10px; }
   .seg.wrap { flex-wrap: wrap; }
   .effects-field { grid-column: 1 / -1; }
@@ -210,7 +212,12 @@
     <canvas id="scrPrev" width="128" height="128"></canvas>
     <div class="screenctl">
       <div class="seg" id="scrModel">
-        <button data-m="coupe">Street coupe</button><button data-m="sedan">Tuner sedan</button><button data-m="bike">Superbike</button>
+        <button data-m="coupe">Street coupe</button><button data-m="sedan">Tuner sedan</button><button data-m="bike">Superbike</button><button data-m="image">Your image</button>
+      </div>
+      <div class="scrimage" id="scrImage" hidden>
+        <label class="btn">Choose picture or GIF…<input type="file" id="scrFile" accept="image/png,image/jpeg,image/gif" hidden></label>
+        <div class="seg" id="scrFit"><button data-f="fill">Fill</button><button data-f="fit">Fit</button></div>
+        <span class="muted" id="scrImgNote">PNG, JPG or animated GIF, up to 20 MB. Use pictures you have the right to use.</span>
       </div>
       <div class="scrcolors" id="scrColors">
         <label class="colorfield"><span>Paint</span><input type="color" id="scrBody"></label>
@@ -526,14 +533,16 @@ $("#updCheckNow").addEventListener("click", (e) => {
 
 // --- keyboard screen (Ajazz AK820 Pro) ------------------------------------------
 let scr = null, scrImg = null, scrKey = "", scrFrame = 0;
-function scrSettings() { return { model: scr.model, body: $("#scrBody").value, accent: $("#scrAccent").value, glow: $("#scrGlow").value }; }
+let scrVer = Date.now();
+function scrSettings() { return { model: scr.model, body: $("#scrBody").value, accent: $("#scrAccent").value, glow: $("#scrGlow").value, fit: scr.fit || "fill" }; }
 function loadScrPreview() {
   const s = scrSettings(), key = JSON.stringify(s);
   if (key === scrKey) return;
   scrKey = key;
   const img = new Image();
   img.onload = () => { if (scrKey === key) scrImg = img; };
-  img.src = "/api/screen/preview?" + new URLSearchParams(s);
+  img.onerror = () => { if (scrKey === key) { scrImg = null; const ctx = $("#scrPrev").getContext("2d"); ctx.fillStyle = "#000"; ctx.fillRect(0, 0, 128, 128); } };
+  img.src = "/api/screen/preview?" + new URLSearchParams({ ...s, v: s.model === "image" ? scrVer : 0 });
 }
 function renderScreen() {
   const st = state.status || {}, v = state.screen || {};
@@ -545,6 +554,9 @@ function renderScreen() {
     $("#scrBody").value = scr.body; $("#scrAccent").value = scr.accent; $("#scrGlow").value = scr.glow;
   }
   document.querySelectorAll("#scrModel button").forEach((b) => b.classList.toggle("on", b.dataset.m === scr.model));
+  $("#scrImage").hidden = scr.model !== "image";
+  $("#scrColors").hidden = scr.model === "image";
+  document.querySelectorAll("#scrFit button").forEach((b) => b.classList.toggle("on", b.dataset.f === (scr.fit || "fill")));
   $("#scrSend").disabled = v.running;
   $("#scrStatus").textContent = v.running ? (v.total ? `Uploading… ${Math.round(100 * v.done / v.total)}%` : "Getting the screen ready…")
     : v.result === "ok" ? "On your keyboard now."
@@ -559,6 +571,20 @@ setInterval(() => {
   const ctx = $("#scrPrev").getContext("2d");
   ctx.drawImage(scrImg, scrFrame * 128, 0, 128, 128, 0, 0, 128, 128);
 }, 80);
+$("#scrFit").addEventListener("click", (e) => { const f = e.target.dataset.f; if (!f || !scr) return; scr.fit = f; renderScreen(); });
+$("#scrFile").addEventListener("change", (e) => {
+  const file = e.target.files[0]; e.target.value = "";
+  if (!file) return;
+  if (file.size > 20 * 1024 * 1024) { toast("That file is over 20 MB"); return; }
+  const rd = new FileReader();
+  rd.onload = () => run(async () => {
+    const r = await api("/api/screen/image", { data: rd.result });
+    scrVer = Date.now(); scrKey = "";
+    $("#scrImgNote").textContent = `${file.name}: ${r.frames} frame${r.frames === 1 ? "" : "s"}${r.note ? " (" + r.note + ")" : ""}. Press Send to put it on the keyboard.`;
+    renderScreen(); toast("Picture loaded");
+  });
+  rd.readAsDataURL(file);
+});
 $("#scrModel").addEventListener("click", (e) => { const m = e.target.dataset.m; if (!m || !scr) return; scr.model = m; renderScreen(); });
 ["#scrBody", "#scrAccent", "#scrGlow"].forEach((id) => $(id).addEventListener("change", loadScrPreview));
 $("#scrSend").addEventListener("click", () => run(async () => {
