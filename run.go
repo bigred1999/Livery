@@ -128,6 +128,7 @@ func runBackground() {
 		st := applyOpenRGB(t, s)
 		setStatus(func(d *DeviceStatus) { d.OpenRGB = st })
 		applyBulbs(t, s)
+		startAnimator(t, s)
 		if rx == nil && have.receiver {
 			rx, _ = OpenReceiver(all, logf)
 		}
@@ -257,7 +258,7 @@ loop:
 				time.Sleep(500 * time.Millisecond)
 				mouseOK = applyMouseWith(rx, r, s)
 				lastMouse = time.Now()
-			} else if now.Sub(lastMouse) >= mouseEvery && (!mouseOK || s.Effect == "static") {
+			} else if now.Sub(lastMouse) >= mouseEvery && (!mouseOK || s.Effect != "breathe") {
 				mouseOK = quietly(func() bool { return applyMouseWith(rx, r, s) }, mouseOK, "mouse")
 				lastMouse = time.Now()
 			}

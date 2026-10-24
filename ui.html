@@ -91,6 +91,12 @@
   #scrPrev { width: 256px; height: 256px; image-rendering: pixelated; border-radius: 12px; border: 1px solid var(--border); background: #000; }
   .screenctl { flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px; }
   .scrcolors { display: grid; grid-template-columns: repeat(3, minmax(110px, 1fr)); gap: 10px; }
+  .seg.wrap { flex-wrap: wrap; }
+  .effects-field { grid-column: 1 / -1; }
+  .fxpreview { grid-column: 1 / -1; display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  #fxCanvas { width: 300px; height: 104px; border-radius: 10px; background: #0a0a0c; border: 1px solid #222; }
+  #fxDesc { color: var(--text); margin-bottom: 6px; max-width: 520px; }
+  .dir { display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
   .bulbform { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; align-items: end; margin-top: 14px; }
   .bulbform input[type=text], .bulbform input[type=password] { width: 100%; box-sizing: border-box; background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; font: inherit; }
   .steps { margin: 8px 0 0; padding-left: 20px; color: var(--muted); font-size: 14px; line-height: 1.7; }
@@ -134,16 +140,32 @@
     <label class="field">Brightness
       <div class="row"><input type="range" id="brightness" min="5" max="100" step="5"><output id="bOut"></output></div>
     </label>
-    <div class="field">
-      <span class="muted">Effect</span>
-      <div class="seg" id="effect">
-        <button data-v="static">Static</button>
-        <button data-v="breathe">Breathe</button>
-      </div>
-    </div>
-    <label class="field">Breathe speed
+    <label class="field">Speed
       <div class="row"><input type="range" id="speed" min="1" max="10" step="1"><output id="sOut"></output></div>
     </label>
+    <label class="field">Intensity
+      <div class="row"><input type="range" id="intensity" min="1" max="10" step="1"><output id="iOut"></output></div>
+    </label>
+    <div class="field effects-field">
+      <span class="muted">Effect</span>
+      <div class="seg wrap" id="effect">
+        <button data-v="static">Static</button>
+        <button data-v="breathe">Breathe</button>
+        <button data-v="flicker">Flicker</button>
+        <button data-v="strobe">Strobe</button>
+        <button data-v="wave">Wave</button>
+        <button data-v="redline">Redline</button>
+        <button data-v="sparkle">Sparkle</button>
+      </div>
+    </div>
+    <div class="fxpreview">
+      <canvas id="fxCanvas" width="300" height="104"></canvas>
+      <div>
+        <div id="fxDesc"></div>
+        <label class="dir" id="dirField"><input type="checkbox" id="reverse"> Run right to left</label>
+        <div class="muted" id="fxWhere"></div>
+      </div>
+    </div>
     <div class="field"><button class="btn" id="reapply">Re-apply to all devices</button></div>
   </div>
 
@@ -355,7 +377,13 @@ function render() {
 
   if (document.activeElement !== $("#brightness")) { $("#brightness").value = s.brightness; $("#bOut").textContent = s.brightness + "%"; }
   if (document.activeElement !== $("#speed")) { $("#speed").value = s.speed; $("#sOut").textContent = s.speed; }
-  $("#speed").disabled = s.effect !== "breathe";
+  if (document.activeElement !== $("#intensity")) { $("#intensity").value = s.intensity || 6; $("#iOut").textContent = s.intensity || 6; }
+  $("#speed").disabled = s.effect === "static";
+  $("#intensity").disabled = s.effect === "static";
+  $("#reverse").checked = !!s.reverse;
+  $("#dirField").hidden = !(s.effect === "wave" || s.effect === "redline");
+  $("#fxDesc").textContent = FX_DESC[s.effect] || "";
+  $("#fxWhere").textContent = fxWhere(s.effect);
   document.querySelectorAll("#effect button").forEach((b) => b.classList.toggle("on", b.dataset.v === s.effect));
   $("#autostart").checked = state.autostart;
 
@@ -367,6 +395,103 @@ function render() {
   renderScreen();
   renderUpdate();
 }
+
+// --- effects (same math as effects.go) -------------------------------------------
+const FX_LABEL = { static: "Static", breathe: "Breathe", flicker: "Flicker", strobe: "Strobe", wave: "Wave", redline: "Redline", sparkle: "Sparkle" };
+const FX_DESC = {
+  static: "Solid livery colors.",
+  breathe: "Slow fade in and out. Intensity sets how dark it gets.",
+  flicker: "A failing neon tube: mostly lit with sudden stutters, everything in sync. Speed sets how often, intensity how deep.",
+  strobe: "On/off flashes. Speed sets the rate; higher intensity makes the flashes shorter and sharper.",
+  wave: "The livery's colors (or stripes) roll across your setup. Intensity squeezes more of the pattern in.",
+  redline: "A rev counter: the accent color sweeps across as revs climb, the limiter flashes, then it shifts and starts again.",
+  sparkle: "Accent-colored sparkles twinkle over a dimmed livery. Intensity sets how many.",
+};
+function fxWhere(e) {
+  const st = (state && state.status) || {};
+  if (e === "static") return "";
+  const has = (v) => v && v !== "not connected" && v !== "receiver not found";
+  const live = [], fallback = [];
+  if (e === "breathe") {
+    if (has(st.laptop) || has(st.lights)) live.push("Alienware (built-in breathing)");
+    if (has(st.gmbk)) live.push("Glorious (built-in)");
+    if (has(st.mouse)) live.push("mouse (built-in)");
+    if ((st.openrgbDevices || []).length) live.push("OpenRGB devices");
+    return live.length ? "Breathing on: " + live.join(", ") + "." : "";
+  }
+  if (has(st.laptop)) live.push("Alienware keyboard");
+  if (has(st.lights)) live.push("rear and lid lights");
+  if ((st.openrgbDevices || []).length) live.push("OpenRGB devices");
+  if (has(st.gmbk)) (e === "wave" ? live : fallback).push(e === "wave" ? "Glorious (its own wave)" : "Glorious");
+  if (has(st.mouse)) fallback.push("wireless mouse");
+  if (has(st.ajazz)) fallback.push("Ajazz keyboard");
+  if (state && state.bulbs && (state.bulbs.bulbs || []).some((b) => b.enabled)) fallback.push("smart bulbs");
+  let t = live.length ? "Animated on: " + live.join(", ") + "." : "";
+  if (fallback.length) t += " Stays on the livery colors: " + fallback.join(", ") + " (they store lighting in their own memory or run on battery, so they aren't streamed frames).";
+  return t;
+}
+function hash32(x) {
+  x ^= x >>> 16; x = Math.imul(x, 0x7feb352d) >>> 0; x ^= x >>> 15; x = Math.imul(x, 0x846ca68b) >>> 0; x ^= x >>> 16;
+  return x >>> 0;
+}
+function rand01(a, b) { return hash32((Math.imul(a >>> 0, 0x9E3779B1) ^ hash32(b >>> 0)) >>> 0) / 4294967296; }
+function hexRGB(h) { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }
+function scale(c, f) { return c.map((v) => Math.max(0, Math.min(255, Math.round(v * f)))); }
+function lerp(a, b, f) { f = Math.max(0, Math.min(1, f)); return a.map((v, i) => Math.round(v + (b[i] - v) * f)); }
+function paletteAt(p, u) {
+  if (p.length === 1) return p[0];
+  u -= Math.floor(u); const pos = u * p.length, i = Math.floor(pos) % p.length; let f = pos - Math.floor(pos);
+  f = f * f * (3 - 2 * f); return lerp(p[i], p[(i + 1) % p.length], f);
+}
+function flickerLevel(ms, speed, intensity) {
+  const n = Math.floor(ms / 35), chance = 0.015 + 0.09 * speed, depth = 0.35 + 0.6 * intensity;
+  for (let back = 0; back < 4 && n >= back; back++) {
+    const s = n - back;
+    if (rand01(s, 1) < chance) {
+      const len = 1 + Math.floor(rand01(s, 2) * 4);
+      if (back < len) { let d = depth * (0.55 + 0.45 * rand01(s + back, 3)); if (back % 2 === 1) d *= 0.4; return 1 - d; }
+    }
+  }
+  return 1 - 0.04 * intensity * rand01(n, 4);
+}
+function effectColor(p, ms, e) {
+  const sec = ms / 1000;
+  switch (e.name) {
+    case "breathe": { const period = 7 - 5.5 * e.speed, low = 1 - 0.88 * (0.35 + 0.65 * e.intensity);
+      return scale(p.color, low + (1 - low) * (0.5 - 0.5 * Math.cos(2 * Math.PI * sec / period))); }
+    case "flicker": return scale(p.color, flickerLevel(ms, e.speed, e.intensity));
+    case "strobe": { const period = 1.2 - 1.05 * e.speed, on = 0.5 - 0.4 * e.intensity;
+      return ((sec % period) / period < on) ? p.color : [0, 0, 0]; }
+    case "wave": { const period = 6 - 5 * e.speed, x = e.reverse ? 1 - p.x : p.x, width = 1.6 - 1.2 * e.intensity;
+      return paletteAt(e.palette, x * width - sec / period); }
+    case "redline": { const period = 4 - 3 * e.speed, ph = (sec % period) / period, x = e.reverse ? 1 - p.x : p.x;
+      if (ph < 0.78) { let rpm = ph / 0.78; rpm *= rpm; return x <= rpm ? lerp(p.color, e.accent, 0.35 + 0.65 * e.intensity) : scale(p.color, 0.25 + 0.5 * rpm); }
+      if (ph < 0.92) return Math.floor((sec % period) * 14) % 2 === 0 ? e.accent : scale(p.color, 0.15);
+      return scale(p.color, 0.25); }
+    case "sparkle": { const step = 120 - 80 * e.speed, n = Math.floor(ms / step), f = (ms % step) / step, density = 0.01 + 0.07 * e.intensity, base = scale(p.color, 0.55);
+      for (let back = 0; back < 3 && n >= back; back++) if (rand01(n - back, p.seed) < density) { const fade = 1 - (back + f) / 3; return lerp(base, e.accent, fade * fade); }
+      return base; }
+  }
+  return p.color;
+}
+const fxStart = performance.now();
+function drawFx() {
+  requestAnimationFrame(drawFx);
+  if (!state) return;
+  const s = state.settings, t = state.themes.find((x) => x.id === s.themeId) || state.themes[0];
+  const f = s.brightness / 100;
+  const e = { name: s.effect, speed: (s.speed - 1) / 9, intensity: ((s.intensity || 6) - 1) / 9, reverse: !!s.reverse,
+    accent: scale(hexRGB(t.accent), f), palette: (t.stripes && t.stripes.length ? t.stripes : [t.base, t.accent]).map((h) => scale(hexRGB(h), f)) };
+  const ctx = $("#fxCanvas").getContext("2d"), ms = performance.now() - fxStart;
+  ctx.fillStyle = "#0a0a0c"; ctx.fillRect(0, 0, 300, 104);
+  for (let r = 0; r < 6; r++) for (let c = 0; c < 15; c++) {
+    const col = scale(hexRGB(keyColor(t, r, c)), f), accent = (ACCENTS[t.accentKeys] || []).some(([ar, ac]) => ar === r && ac === c);
+    const out = effectColor({ x: c / 14, color: col, accent, seed: r * 15 + c }, ms, e);
+    ctx.fillStyle = `rgb(${out[0]},${out[1]},${out[2]})`;
+    ctx.beginPath(); ctx.roundRect(8 + c * 19, 8 + r * 15.5, 16, 12, 2); ctx.fill();
+  }
+}
+requestAnimationFrame(drawFx);
 
 // --- updates ----------------------------------------------------------------------
 let seenVersion = null;
@@ -570,7 +695,14 @@ $("#preview").addEventListener("click", () => run(async () => {
 }));
 $("#save").addEventListener("click", () => run(async () => {
   state = await api("/api/themes/save", { theme: draftTheme(), apply: true });
-  draft = null; render(); toast("Saved and applied");
+  // Keep the editor on the livery just saved (it's now the active one), so it
+  // doesn't jump back to the theme it was started from.
+  const saved = state.settings.themeId;
+  draft = null;
+  render();
+  $("#startFrom").value = saved;
+  loadDraft(saved, true);
+  toast("Saved and applied");
 }));
 
 // --- actions --------------------------------------------------------------------
@@ -609,7 +741,10 @@ $("#brightness").addEventListener("input", (e) => $("#bOut").textContent = e.tar
 $("#brightness").addEventListener("change", (e) => applySettings({ brightness: +e.target.value }, `Brightness ${e.target.value}%`));
 $("#speed").addEventListener("input", (e) => $("#sOut").textContent = e.target.value);
 $("#speed").addEventListener("change", (e) => applySettings({ speed: +e.target.value }, "Speed updated"));
-$("#effect").addEventListener("click", (e) => { const v = e.target.dataset.v; if (v) applySettings({ effect: v }, v === "breathe" ? "Breathing on all devices" : "Static colors"); });
+$("#effect").addEventListener("click", (e) => { const v = e.target.dataset.v; if (v) applySettings({ effect: v }, (FX_LABEL[v] || v) + " on"); });
+$("#intensity").addEventListener("input", (e) => $("#iOut").textContent = e.target.value);
+$("#intensity").addEventListener("change", (e) => applySettings({ intensity: +e.target.value }, `Intensity ${e.target.value}`));
+$("#reverse").addEventListener("change", (e) => applySettings({ reverse: e.target.checked }, e.target.checked ? "Right to left" : "Left to right"));
 $("#reapply").addEventListener("click", () => run(async () => { state = await api("/api/reapply", {}); render(); toast("Re-applied"); }));
 $("#autostart").addEventListener("change", (e) => run(async () => {
   state = await api("/api/autostart", { enabled: e.target.checked }); render();

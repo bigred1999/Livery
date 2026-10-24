@@ -23,8 +23,10 @@ func (t *tsWriter) Write(p []byte) (int, error) {
 type Settings struct {
 	ThemeID    string `json:"themeId"`
 	Brightness int    `json:"brightness"` // 5..100
-	Effect     string `json:"effect"`     // static | breathe
+	Effect     string `json:"effect"`     // static | breathe | flicker | strobe | wave | redline | sparkle
 	Speed      int    `json:"speed"`      // 1 (slow) .. 10 (fast)
+	Intensity  int    `json:"intensity"`  // 1 (subtle) .. 10 (strong)
+	Reverse    bool   `json:"reverse"`    // wave / redline run right to left
 	// UpdateCheck turns the daily check for new releases on GitHub on or off (default on).
 	UpdateCheck *bool `json:"updateCheck,omitempty"`
 }
@@ -35,8 +37,11 @@ func (s *Settings) normalize() {
 	if s.Brightness < 5 || s.Brightness > 100 {
 		s.Brightness = 100
 	}
-	if s.Effect != "breathe" {
+	if !validEffect(s.Effect) {
 		s.Effect = "static"
+	}
+	if s.Intensity < 1 || s.Intensity > 10 {
+		s.Intensity = 6
 	}
 	if s.Speed < 1 || s.Speed > 10 {
 		s.Speed = 5
@@ -183,10 +188,16 @@ func applyGMBK(all []HidInfo, r Resolved, s Settings) bool {
 		return false
 	}
 	defer g.Close()
+	// The GMBK saves lighting on the keyboard, so it never gets a stream of
+	// frames: it uses its own breathing or wave, or stays on the livery colors.
 	effect := byte(GMBKStatic)
 	speed := byte(50)
-	if s.Effect == "breathe" {
+	switch s.Effect {
+	case "breathe":
 		effect = GMBKBreathing
+		speed = byte(10 * s.Speed)
+	case "wave":
+		effect = GMBKWave
 		speed = byte(10 * s.Speed)
 	}
 	global := GMBKZone{Effect: effect, Brightness: 100, Speed: speed, Color: r.GMBKBase}
@@ -282,11 +293,6 @@ var _ = fmt.Sprintf
 // applyOpenRGB paints every OpenRGB device Livery doesn't drive itself.
 // Returns a short status for the control panel.
 func applyOpenRGB(t ThemeDef, s Settings) string {
-	if s.Effect == "breathe" {
-		defer startOpenRGBBreathe(t, s)
-	} else {
-		stopOpenRGBBreathe()
-	}
 	var names []string
 	defer func() { setStatus(func(d *DeviceStatus) { d.OpenRGBDevices = names }) }()
 	o, err := ConnectOpenRGB()
