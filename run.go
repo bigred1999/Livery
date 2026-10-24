@@ -135,6 +135,18 @@ func runBackground() {
 	}
 	applyAll()
 
+	// If OpenRGB is installed but its server isn't up, start it and paint
+	// its devices once it's ready.
+	go func() {
+		if ensureOpenRGB() {
+			req := applyRequest{done: make(chan DeviceStatus, 1)}
+			select {
+			case applyCh <- req:
+			case <-stopCh:
+			}
+		}
+	}()
+
 	ticker := time.NewTicker(tick)
 	defer ticker.Stop()
 loop:

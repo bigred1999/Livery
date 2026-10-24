@@ -277,7 +277,7 @@ var _ = fmt.Sprintf
 func applyOpenRGB(t ThemeDef, s Settings) string {
 	o, err := ConnectOpenRGB()
 	if err != nil {
-		return "not running"
+		return openRGBMissingStatus()
 	}
 	defer o.Close()
 	ctrls, err := o.Controllers()

@@ -33,11 +33,21 @@ Other Alienware laptops that use the same controllers will probably work for cha
 
 ## Getting started
 
-1. Download `livery.exe` from the [latest release](../../releases/latest) and put it in its own folder (Livery keeps `config.json` and a `logs` folder next to it).
-2. Double-click it. The control panel opens in your browser.
-3. Pick a livery. Turn on **Start Livery when I log in** if you want it to persist.
+1. Download **`Livery-Setup-<version>.exe`** from the [latest release](../../releases/latest) and run it.
+2. Pick what to install:
+   - **Livery** goes in your user folder (`%LOCALAPPDATA%\Programs\Livery`). No admin rights needed.
+   - **OpenRGB** (ticked if it isn't installed yet). Setup downloads the official OpenRGB installer from codeberg.org, checks its SHA-256, and installs it with its background service so the SDK server is always on. Windows asks for permission.
+   - **PawnIO** (ticked if missing). OpenRGB needs this driver on Windows for RAM and some motherboard lighting. It's downloaded from its official GitHub release and checked the same way.
+   - **Start Livery when I sign in**.
+3. Finish opens the control panel. Pick a livery.
 
-**To include OpenRGB devices:** install [OpenRGB](https://openrgb.org) (1.0 or newer). Either install it with the background service option, or open OpenRGB → *SDK Server* → *Start Server*. Livery connects to `127.0.0.1:6742` automatically and the **OpenRGB** chip in the panel shows how many devices it painted. On Windows, OpenRGB needs [PawnIO](https://pawnio.eu) for RAM and some motherboard lighting.
+Livery shows up in *Settings → Apps* and uninstalls from there. OpenRGB and PawnIO stay installed unless you remove them too.
+
+Windows SmartScreen may warn that the installer is from an unknown publisher, because it isn't code-signed. Choose *More info → Run anyway* if you trust the download, or build it yourself (see *Building*).
+
+**Portable use:** `livery.exe` also runs on its own from any folder. It keeps `config.json` and a `logs` folder next to itself.
+
+**OpenRGB:** if OpenRGB is installed but its server isn't running, Livery starts it minimized to the tray with `--server`. If you installed OpenRGB yourself without its service, that's all you need. Livery connects to `127.0.0.1:6742`, and the **OpenRGB** chip in the panel shows how many devices it painted.
 
 **Avoid two apps fighting over one device.** Close or disable lighting control in vendor apps (Alienware Command Center lighting, iCUE, Synapse, G HUB, Glorious CORE) for the devices Livery manages. Livery skips devices it drives itself when talking to OpenRGB.
 
@@ -60,15 +70,13 @@ livery.exe install    enable start at login    |  uninstall   disable it and sto
 
 ## Building
 
-Requires Go 1.22+.
+Requires Go 1.22+, plus NSIS and mingw-w64 binutils for the installer and icon (`apt install nsis binutils-mingw-w64-x86-64` on Debian/Ubuntu).
 
 ```
-go mod tidy
-GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w -H windowsgui" -o livery.exe .
-go test ./...
+./build.sh        # build/livery.exe and build/Livery-Setup-<version>.exe, runs the tests
 ```
 
-The control panel (`ui.html`) is embedded in the binary.
+Just the app: `GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-s -w -H windowsgui" -o livery.exe .` The control panel (`ui.html`) is embedded in the binary.
 
 ## Contributing
 
