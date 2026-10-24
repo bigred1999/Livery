@@ -1,0 +1,6 @@
+build/
+third_party/
+go.local.mod
+logs/
+config.json
+*.exe

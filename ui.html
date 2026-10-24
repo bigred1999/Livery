@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Livery</title>
+<style>
+  :root {
+    --bg: #0d0d0f;
+    --surface: #16161a;
+    --surface-2: #1d1d22;
+    --border: #2a2a31;
+    --text: #f3f3f5;
+    --muted: #9b9ba6;
+    --red: #d4021d;
+    --red-soft: rgba(212, 2, 29, 0.14);
+    --ok: #3ccf7a;
+    --warn: #f0b429;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font-family: Bahnschrift, "Segoe UI", system-ui, sans-serif;
+    font-size: 15px; line-height: 1.45;
+  }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 28px 20px 60px; }
+  header { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .brand { display: flex; align-items: baseline; gap: 10px; }
+  .brand h1 { margin: 0; font-size: 26px; letter-spacing: 0.14em; font-weight: 700; }
+  .brand h1 span { color: var(--red); }
+  .brand small { color: var(--muted); letter-spacing: 0.06em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { display: flex; align-items: center; gap: 7px; padding: 6px 11px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font-size: 13px; color: var(--muted); }
+  .chip b { color: var(--text); font-weight: 600; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.ok { background: var(--ok); box-shadow: 0 0 8px var(--ok); }
+  .dot.warn { background: var(--warn); }
+  h2 { font-size: 13px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 600; margin: 34px 0 14px; display: flex; align-items: center; gap: 10px; }
+  h2::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(245px, 1fr)); gap: 14px; }
+  .card { position: relative; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; cursor: pointer; transition: border-color .15s, transform .15s; text-align: left; color: inherit; font: inherit; }
+  .card:hover { border-color: #44444d; transform: translateY(-1px); }
+  .card.active { border-color: var(--red); box-shadow: 0 0 0 1px var(--red), 0 8px 30px var(--red-soft); }
+  .card .tag { font-size: 10px; letter-spacing: 0.14em; color: #fff; background: var(--red); padding: 2px 6px; border-radius: 4px; display: none; vertical-align: 3px; margin-left: 6px; }
+  .card.active .tag { display: inline-block; }
+  .card h3 { margin: 12px 0 4px; font-size: 17px; letter-spacing: 0.03em; }
+  .card p { margin: 0; color: var(--muted); font-size: 13px; min-height: 38px; }
+  .card .actions { display: flex; gap: 6px; margin-top: 10px; }
+  .kbd { display: grid; grid-template-columns: repeat(15, 1fr); gap: 2px; padding: 7px; background: #0a0a0c; border-radius: 8px; border: 1px solid #222; }
+  .kbd i { display: block; height: 9px; border-radius: 2px; }
+  .swatches { display: flex; gap: 10px; margin-top: 9px; align-items: center; }
+  .sw { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); }
+  .sw i { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(255,255,255,.15); display: block; }
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 22px; align-items: end; }
+  label.field { display: flex; flex-direction: column; gap: 8px; font-size: 13px; color: var(--muted); letter-spacing: 0.04em; }
+  label.field .row { display: flex; align-items: center; gap: 12px; }
+  label.field output { color: var(--text); min-width: 42px; text-align: right; font-variant-numeric: tabular-nums; }
+  input[type=range] { flex: 1; accent-color: var(--red); }
+  .seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 3px; }
+  .seg button { border: 0; background: transparent; color: var(--muted); padding: 8px 16px; border-radius: 7px; font: inherit; cursor: pointer; letter-spacing: 0.04em; }
+  .seg button.on { background: var(--red); color: #fff; }
+  .btn { border: 1px solid var(--border); background: var(--surface-2); color: var(--text); padding: 9px 15px; border-radius: 9px; font: inherit; cursor: pointer; letter-spacing: 0.03em; }
+  .btn:hover { border-color: #4a4a54; }
+  .btn.primary { background: var(--red); border-color: var(--red); color: #fff; }
+  .btn.small { padding: 4px 10px; font-size: 12px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .editor { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 14px 18px; }
+  .colorfield { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; font-size: 13px; }
+  .colorfield input[type=color] { width: 40px; height: 28px; border: 0; background: none; padding: 0; cursor: pointer; }
+  select, input[type=text] { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); border-radius: 9px; padding: 8px 10px; font: inherit; }
+  .zones { display: flex; gap: 4px; }
+  .zones button { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-2); color: var(--muted); font: inherit; font-size: 11px; cursor: pointer; }
+  .zones button.on { background: var(--red); border-color: var(--red); color: #fff; }
+  .stripes { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .stripes input[type=color] { width: 34px; height: 28px; border: 0; background: none; padding: 0; cursor: pointer; }
+  .editor-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; align-items: center; }
+  .toggle { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .switch { position: relative; width: 46px; height: 26px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch span { position: absolute; inset: 0; background: #33333b; border-radius: 999px; cursor: pointer; transition: .2s; }
+  .switch span::before { content: ""; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .switch input:checked + span { background: var(--red); }
+  .switch input:checked + span::before { transform: translateX(20px); }
+  .muted { color: var(--muted); font-size: 13px; }
+  .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: #222228; border: 1px solid var(--border); padding: 10px 16px; border-radius: 10px; opacity: 0; transition: .2s; pointer-events: none; max-width: 90vw; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  details > summary { cursor: pointer; list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  @media (max-width: 600px) { .brand h1 { font-size: 21px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><h1>LIVERY<span>.</span></h1><small id="ver"></small></div>
+    <div class="chips" id="chips"></div>
+  </header>
+
+  <h2>Livery</h2>
+  <div class="grid" id="themes"></div>
+
+  <h2>Fine-tune</h2>
+  <div class="panel controls">
+    <label class="field">Brightness
+      <div class="row"><input type="range" id="brightness" min="5" max="100" step="5"><output id="bOut"></output></div>
+    </label>
+    <div class="field">
+      <span class="muted">Effect</span>
+      <div class="seg" id="effect">
+        <button data-v="static">Static</button>
+        <button data-v="breathe">Breathe</button>
+      </div>
+    </div>
+    <label class="field">Breathe speed
+      <div class="row"><input type="range" id="speed" min="1" max="10" step="1"><output id="sOut"></output></div>
+    </label>
+    <div class="field"><button class="btn" id="reapply">Re-apply to all devices</button></div>
+  </div>
+
+  <h2>Build your own</h2>
+  <div class="panel">
+    <div class="editor-actions" style="margin-top:0;margin-bottom:16px">
+      <span class="muted">Start from</span>
+      <select id="startFrom"></select>
+      <input type="text" id="tName" placeholder="Livery name" maxlength="40">
+    </div>
+    <div class="editor" id="editor"></div>
+    <div style="margin-top:16px" class="editor">
+      <div class="field">
+        <span class="muted">Keyboard accent keys</span>
+        <select id="accentKeys">
+          <option value="wasd-arrows">WASD + arrows</option>
+          <option value="wasd">WASD</option>
+          <option value="arrows">Arrows</option>
+          <option value="function-row">Function row</option>
+          <option value="none">None</option>
+        </select>
+      </div>
+      <div class="field">
+        <span class="muted">Stripes (left to right, replaces main color)</span>
+        <div class="stripes" id="stripes"></div>
+      </div>
+      <div class="field">
+        <span class="muted">Glorious accent zones (columns 1-10)</span>
+        <div class="zones" id="zones"></div>
+      </div>
+    </div>
+    <div class="editor-actions">
+      <button class="btn" id="preview">Preview on devices</button>
+      <button class="btn primary" id="save">Save &amp; apply</button>
+      <span class="muted" id="editNote"></span>
+    </div>
+  </div>
+
+  <h2>Startup</h2>
+  <div class="panel toggle">
+    <div>
+      <div>Start Livery when I log in</div>
+      <div class="muted">Keeps your livery on after reboots, sleep and when the mouse wakes up. Adds one entry to your Windows startup apps.</div>
+    </div>
+    <label class="switch"><input type="checkbox" id="autostart"><span></span></label>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let state = null;
+let draft = null;
+let editingId = null;
+
+const SLOTS = [
+  ["base", "Main color"], ["accent", "Accent"], ["rearLeft", "Rear light (left)"],
+  ["rearRight", "Rear light (right)"], ["lid", "Alien head (lid)"], ["power", "Power button"],
+  ["mouseLogo", "Mouse logo"], ["mouseSide", "Mouse side / other LEDs"],
+];
+
+function toast(msg) {
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove("show"), 2600);
+}
+
+async function api(path, body) {
+  const opt = body === undefined ? {} : {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Livery": "1" },
+    body: JSON.stringify(body),
+  };
+  const r = await fetch(path, opt);
+  if (!r.ok) throw new Error((await r.text()).trim() || r.statusText);
+  return r.json();
+}
+
+// --- mini keyboard preview -------------------------------------------------
+const ACCENTS = {
+  "wasd-arrows": [[1,2],[2,1],[2,2],[2,3],[4,12],[5,11],[5,12],[5,13]],
+  "wasd": [[1,2],[2,1],[2,2],[2,3]],
+  "arrows": [[4,12],[5,11],[5,12],[5,13]],
+  "function-row": [[0,1],[0,2],[0,3],[0,4],[0,5],[0,6],[0,7],[0,8],[0,9],[0,10],[0,11],[0,12]],
+  "none": [],
+};
+function keyColor(t, r, c) {
+  const acc = ACCENTS[t.accentKeys] || [];
+  if (acc.some(([ar, ac]) => ar === r && ac === c)) return t.accent;
+  if (t.stripes && t.stripes.length) {
+    const i = Math.min(t.stripes.length - 1, Math.floor((c / 15) * t.stripes.length));
+    return t.stripes[i];
+  }
+  return t.base;
+}
+function glow(hex) {
+  // LEDs look brighter than paint: lift very dark colors a little so the preview reads
+  return hex.toLowerCase() === "#000000" ? "#141416" : hex;
+}
+function kbdHTML(t) {
+  let h = '<div class="kbd">';
+  for (let r = 0; r < 6; r++) for (let c = 0; c < 15; c++) h += `<i style="background:${glow(keyColor(t, r, c))}"></i>`;
+  return h + "</div>";
+}
+function swatchesHTML(t) {
+  const s = [["Rear", t.rearLeft], ["Lid", t.lid], ["Power", t.power], ["Mouse", t.mouseLogo]];
+  return '<div class="swatches">' + s.map(([n, c]) => `<span class="sw"><i style="background:${glow(c)}"></i>${n}</span>`).join("") + "</div>";
+}
+
+// --- rendering --------------------------------------------------------------
+function statusChip(name, val) {
+  const ok = typeof val === "string" && val.startsWith("ok");
+  const cls = ok ? "ok" : (val ? "warn" : "");
+  const txt = val === "ok" ? "synced" : ok ? val.replace(/^ok,?\s*/, "") : (val || "waiting");
+  return `<span class="chip" title="${txt}"><span class="dot ${cls}"></span><b>${name}</b>${txt}</span>`;
+}
+function render() {
+  const s = state.settings;
+  $("#ver").textContent = "v" + state.version;
+  const st = state.status || {};
+  $("#chips").innerHTML = statusChip("Alienware keys", st.laptop) + statusChip("Alienware lid / rear / power", st.lights) +
+    statusChip("Glorious GMBK", st.gmbk) + statusChip("Logitech G", st.mouse) + statusChip("OpenRGB", st.openrgb);
+
+  const list = state.themes.filter((t) => t.id !== "custom-preview");
+  $("#themes").innerHTML = list.map((t) => `
+    <div class="card ${t.id === s.themeId ? "active" : ""}" data-id="${t.id}" role="button" tabindex="0">
+      ${kbdHTML(t)}${swatchesHTML(t)}
+      <h3>${esc(t.name)}<span class="tag">ACTIVE</span></h3><p>${esc(t.description || (t.builtin ? "" : "Your custom livery."))}</p>
+      ${t.builtin ? "" : `<div class="actions"><button class="btn small" data-edit="${t.id}">Edit</button><button class="btn small" data-del="${t.id}">Delete</button></div>`}
+    </div>`).join("");
+
+  if (document.activeElement !== $("#brightness")) { $("#brightness").value = s.brightness; $("#bOut").textContent = s.brightness + "%"; }
+  if (document.activeElement !== $("#speed")) { $("#speed").value = s.speed; $("#sOut").textContent = s.speed; }
+  $("#speed").disabled = s.effect !== "breathe";
+  document.querySelectorAll("#effect button").forEach((b) => b.classList.toggle("on", b.dataset.v === s.effect));
+  $("#autostart").checked = state.autostart;
+
+  const sf = $("#startFrom"), keep = sf.value;
+  sf.innerHTML = list.map((t) => `<option value="${t.id}">${esc(t.name)}</option>`).join("");
+  sf.value = keep && list.some((t) => t.id === keep) ? keep : s.themeId;
+  if (!draft) loadDraft(sf.value);
+}
+function esc(x) { return String(x).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+
+// --- editor -------------------------------------------------------------------
+function loadDraft(id, editing = false) {
+  const t = state.themes.find((x) => x.id === id) || state.themes[0];
+  draft = JSON.parse(JSON.stringify(t));
+  draft.stripes = draft.stripes || [];
+  draft.gmbkAccentZones = draft.gmbkAccentZones || [];
+  editingId = editing ? t.id : null;
+  $("#tName").value = editing ? t.name : (t.builtin ? t.name + " custom" : t.name);
+  $("#editNote").textContent = editing ? `Editing "${t.name}"` : `New livery based on "${t.name}"`;
+  renderEditor();
+}
+function renderEditor() {
+  $("#editor").innerHTML = SLOTS.map(([k, label]) => `
+    <label class="colorfield"><span>${label}</span><input type="color" data-k="${k}" value="${draft[k]}"></label>`).join("");
+  $("#accentKeys").value = draft.accentKeys || "none";
+  const st = draft.stripes;
+  $("#stripes").innerHTML = st.map((c, i) => `<input type="color" data-s="${i}" value="${c}">`).join("") +
+    (st.length < 5 ? `<button class="btn small" id="addStripe">+ stripe</button>` : "") +
+    (st.length ? `<button class="btn small" id="clrStripe">Clear</button>` : "");
+  $("#zones").innerHTML = Array.from({ length: 10 }, (_, i) => i + 1)
+    .map((z) => `<button data-z="${z}" class="${draft.gmbkAccentZones.includes(z) ? "on" : ""}">${z}</button>`).join("");
+}
+$("#editor").addEventListener("input", (e) => { if (e.target.dataset.k) draft[e.target.dataset.k] = e.target.value.toUpperCase(); });
+$("#stripes").addEventListener("input", (e) => { if (e.target.dataset.s) draft.stripes[+e.target.dataset.s] = e.target.value.toUpperCase(); });
+$("#stripes").addEventListener("click", (e) => {
+  if (e.target.id === "addStripe") { draft.stripes.push(draft.stripes.length ? "#FFFFFF" : draft.base); renderEditor(); }
+  if (e.target.id === "clrStripe") { draft.stripes = []; renderEditor(); }
+});
+$("#zones").addEventListener("click", (e) => {
+  const z = +e.target.dataset.z; if (!z) return;
+  const a = draft.gmbkAccentZones;
+  draft.gmbkAccentZones = a.includes(z) ? a.filter((x) => x !== z) : [...a, z].sort((x, y) => x - y);
+  renderEditor();
+});
+$("#accentKeys").addEventListener("change", (e) => draft.accentKeys = e.target.value);
+$("#startFrom").addEventListener("change", (e) => loadDraft(e.target.value));
+
+function draftTheme() {
+  const t = { ...draft, name: $("#tName").value.trim() || "My livery", builtin: false };
+  t.id = editingId || "";
+  if (!t.description || draft.builtin) t.description = "Your custom livery.";
+  return t;
+}
+$("#preview").addEventListener("click", () => run(async () => {
+  state = await api("/api/preview", draftTheme()); render(); toast("Previewing on your devices (not saved)");
+}));
+$("#save").addEventListener("click", () => run(async () => {
+  state = await api("/api/themes/save", { theme: draftTheme(), apply: true });
+  draft = null; render(); toast("Saved and applied");
+}));
+
+// --- actions --------------------------------------------------------------------
+let busy = false;
+async function run(fn) {
+  if (busy) return; busy = true; document.body.style.cursor = "progress";
+  try { await fn(); } catch (e) { toast("Error: " + e.message); }
+  finally { busy = false; document.body.style.cursor = ""; }
+}
+function applySettings(patch, msg) {
+  return run(async () => {
+    state = await api("/api/apply", { ...state.settings, ...patch });
+    render(); if (msg) toast(msg);
+  });
+}
+$("#themes").addEventListener("click", (e) => {
+  const edit = e.target.dataset.edit, del = e.target.dataset.del;
+  if (edit) { e.stopPropagation(); loadDraft(edit, true); $("#tName").scrollIntoView({ behavior: "smooth", block: "center" }); return; }
+  if (del) {
+    e.stopPropagation();
+    if (!confirm("Delete this livery?")) return;
+    return run(async () => { state = await api("/api/themes/delete", { id: del }); render(); toast("Deleted"); });
+  }
+  const card = e.target.closest(".card"); if (!card) return;
+  const t = state.themes.find((x) => x.id === card.dataset.id);
+  applySettings({ themeId: card.dataset.id }, `${t.name} applied`);
+});
+$("#themes").addEventListener("keydown", (e) => { if (e.key === "Enter" && e.target.classList.contains("card")) e.target.click(); });
+$("#brightness").addEventListener("input", (e) => $("#bOut").textContent = e.target.value + "%");
+$("#brightness").addEventListener("change", (e) => applySettings({ brightness: +e.target.value }, `Brightness ${e.target.value}%`));
+$("#speed").addEventListener("input", (e) => $("#sOut").textContent = e.target.value);
+$("#speed").addEventListener("change", (e) => applySettings({ speed: +e.target.value }, "Speed updated"));
+$("#effect").addEventListener("click", (e) => { const v = e.target.dataset.v; if (v) applySettings({ effect: v }, v === "breathe" ? "Breathing on all devices" : "Static colors"); });
+$("#reapply").addEventListener("click", () => run(async () => { state = await api("/api/reapply", {}); render(); toast("Re-applied"); }));
+$("#autostart").addEventListener("change", (e) => run(async () => {
+  state = await api("/api/autostart", { enabled: e.target.checked }); render();
+  toast(e.target.checked ? "Will start when you log in" : "Removed from startup");
+}));
+
+async function refresh() { try { const s = await api("/api/state"); if (!busy) { state = s; render(); } } catch (e) {} }
+(async () => { state = await api("/api/state"); render(); setInterval(refresh, 5000); })();
+</script>
+</body>
+</html>
