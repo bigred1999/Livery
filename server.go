@@ -434,6 +434,7 @@ func startPanel() {
 		}
 		writeJSON(w, buildState())
 	}))
+	registerPhotoRoutes(mux)
 
 	ln, err := net.Listen("tcp", panelAddr)
 	if err != nil {

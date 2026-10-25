@@ -16,6 +16,7 @@ Livery is a single `.exe` with no installer. It runs quietly in the background, 
   - *Stock Car*: Black & Silver, Speedway Blue & Red
   - *Rallycross & Gymkhana*: Gymkhana, Rallycross Blue
   - *Military*: Builder Navy & Gold, Eagle Black & Gold, Pirate Squadron, Sundown Squadron
+- **Your ride** (new in 2.0): drop in a photo of your own car or bike and Livery finds its paint colors, turns them into a livery for every light (dark paint becomes a full-brightness LED color, black becomes dim graphite, silver and white become cool or warm white) and makes a **matching desktop wallpaper** at your screen's full resolution: racing stripes in your paint colors, or your own photo with a livery panel. Pick a different main or accent color with one click, then save, fine-tune, or set the wallpaper. It all runs on your PC; the photo is never uploaded. Wallpapers are saved in *Pictures\Livery*.
 - **Wi-Fi smart bulbs**: Feit Electric and other Tuya-based bulbs and light strips follow your livery, controlled directly on your home network.
 - **Keyboard screen animations** (Ajazz AK820 Pro): a spinning street coupe, tuner sedan with underglow, or superbike on a neon grid in colors you pick, or **your own picture or animated GIF** (fill or fit, up to 60 frames).
 - **Updates in place**: Livery checks GitHub once a day and installs new releases with one click, keeping your settings.

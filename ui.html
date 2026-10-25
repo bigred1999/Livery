@@ -117,6 +117,26 @@
   .switch input:checked + span { background: var(--red); }
   .switch input:checked + span::before { transform: translateX(20px); }
   .muted { color: var(--muted); font-size: 13px; }
+  .ride { display: grid; grid-template-columns: minmax(240px, 340px) 1fr; gap: 22px; }
+  @media (max-width: 760px) { .ride { grid-template-columns: 1fr; } }
+  .ridephoto { display: flex; flex-direction: column; gap: 10px; }
+  .drop { display: flex; align-items: center; justify-content: center; text-align: center; aspect-ratio: 4 / 3; border: 1px dashed #3a3a44; border-radius: 12px; background: var(--surface-2); color: var(--muted); font-size: 14px; padding: 16px; cursor: pointer; overflow: hidden; position: relative; }
+  .drop.over { border-color: var(--red); color: var(--text); }
+  .drop img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .ridectl { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .palette { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+  .pswatch { display: flex; flex-direction: column; gap: 7px; padding: 9px 10px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); font-size: 13px; }
+  .pswatch .top { display: flex; align-items: center; gap: 8px; }
+  .pswatch .chips2 { display: flex; gap: 3px; }
+  .pswatch .chips2 i { width: 16px; height: 16px; border-radius: 50%; border: 1px solid rgba(255,255,255,.15); display: block; }
+  .pswatch small { color: var(--muted); margin-left: auto; font-variant-numeric: tabular-nums; }
+  .pswatch .roles { display: flex; gap: 4px; }
+  .pswatch .roles button { flex: 1; border: 1px solid var(--border); background: transparent; color: var(--muted); border-radius: 6px; padding: 3px 0; font: inherit; font-size: 11px; letter-spacing: .04em; cursor: pointer; }
+  .pswatch .roles button.on { background: var(--red); border-color: var(--red); color: #fff; }
+  .wallrow { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border); }
+  #wallPrev { width: 100%; max-width: 420px; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 10px; border: 1px solid var(--border); background: #000; display: block; }
+  .wallctl { flex: 1; min-width: 240px; display: flex; flex-direction: column; gap: 12px; }
+  .wallctl .seg { align-self: flex-start; }
   .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px); background: #222228; border: 1px solid var(--border); padding: 10px 16px; border-radius: 10px; opacity: 0; transition: .2s; pointer-events: none; max-width: 90vw; }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   details > summary { cursor: pointer; list-style: none; }
@@ -169,6 +189,40 @@
       </div>
     </div>
     <div class="field"><button class="btn" id="reapply">Re-apply to all devices</button></div>
+  </div>
+
+  <h2>Your ride</h2>
+  <div class="panel">
+    <div class="ride">
+      <div class="ridephoto">
+        <label class="drop" id="rideDrop"><span id="rideDropText">Drop a photo of your own car or bike here, or click to choose one.<br><br>A side or three-quarter shot, filling most of the frame, works best.</span><img id="rideImg" alt="" hidden><input type="file" id="rideFile" accept="image/png,image/jpeg,image/gif" hidden></label>
+        <span class="muted" id="rideNote">Livery finds the paint colors on this PC. The photo isn't uploaded anywhere.</span>
+      </div>
+      <div class="ridectl" id="rideCtl" hidden>
+        <div class="muted">Colors found. Pick which one is the main color and which is the accent:</div>
+        <div class="palette" id="ridePalette"></div>
+        <div id="rideKbd" style="max-width:420px"></div>
+        <div class="editor-actions" style="margin-top:0">
+          <input type="text" id="rideName" placeholder="Livery name" maxlength="40">
+          <button class="btn" id="ridePreview">Preview on devices</button>
+          <button class="btn primary" id="rideSave">Save &amp; apply</button>
+          <button class="btn" id="rideEdit">Fine-tune…</button>
+        </div>
+      </div>
+    </div>
+    <div class="wallrow" id="wallRow" hidden>
+      <img id="wallPrev" alt="Wallpaper preview">
+      <div class="wallctl">
+        <div><b>Matching wallpaper</b> <span class="muted" id="wallRes"></span></div>
+        <div class="seg" id="wallStyle"><button data-w="stripes" class="on">Stripes</button><button data-w="photo">Your photo</button></div>
+        <div class="editor-actions" style="margin-top:0">
+          <button class="btn primary" id="wallSet">Set as wallpaper</button>
+          <button class="btn" id="wallSave">Save to Pictures</button>
+          <button class="btn small" id="rideForget">Remove photo</button>
+        </div>
+        <span class="muted" id="wallNote">Saved in Pictures\Livery at your screen's full resolution.</span>
+      </div>
+    </div>
   </div>
 
   <h2>Build your own</h2>
@@ -732,6 +786,112 @@ $("#save").addEventListener("click", () => run(async () => {
   $("#startFrom").value = saved;
   loadDraft(saved, true);
   toast("Saved and applied");
+}));
+
+// --- your ride: livery + wallpaper from a photo of your own vehicle ------------
+// Role logic mirrors themeFromPaint in photo_livery.go.
+let ride = null;
+const DARK = ["Black", "Graphite"];
+function rideTheme() {
+  const p = ride.res.palette, b = p[ride.base], a = ride.accent >= 0 ? p[ride.accent] : null;
+  const B = b.led, A = a ? a.led : b.led;
+  const t = {
+    id: "", builtin: false, name: $("#rideName").value.trim() || ride.autoName,
+    description: ride.res.theme.description,
+    base: B, accent: A, accentKeys: a ? "wasd-arrows" : "none", stripes: [], stripeRows: false,
+    rearLeft: B, rearRight: B, lid: A, power: B, mouseLogo: B, mouseSide: A,
+    gmbkAccentZones: a ? [1, 10] : [],
+  };
+  if (a && DARK.includes(b.name) && !DARK.includes(a.name)) t.lid = t.power = t.mouseLogo = t.rearLeft = t.rearRight = A;
+  return t;
+}
+function rideAutoName() {
+  const p = ride.res.palette, b = p[ride.base], a = ride.accent >= 0 ? p[ride.accent] : null;
+  return "My " + b.name + (a && a.name !== b.name ? " & " + a.name : "");
+}
+function wallColors() {
+  const p = ride.res.palette, idx = [ride.base];
+  if (ride.accent >= 0) idx.push(ride.accent);
+  if (ride.third >= 0 && !idx.includes(ride.third)) idx.push(ride.third);
+  return idx.map((i) => p[i].paint);
+}
+function renderRide() {
+  $("#rideCtl").hidden = !ride; $("#wallRow").hidden = !ride;
+  if (!ride) return;
+  const nameEl = $("#rideName"), was = ride.autoName;
+  ride.autoName = rideAutoName();
+  if (!nameEl.value || nameEl.value === was) nameEl.value = ride.autoName;
+  $("#ridePalette").innerHTML = ride.res.palette.map((s, i) => `
+    <div class="pswatch">
+      <div class="top"><span class="chips2"><i title="In the photo" style="background:${s.paint}"></i><i title="On your lights" style="background:${glow(s.led)}"></i></span>${esc(s.name)}<small>${Math.round(s.share * 100)}%</small></div>
+      <div class="roles"><button data-i="${i}" data-r="base" class="${i === ride.base ? "on" : ""}">Main</button><button data-i="${i}" data-r="accent" class="${i === ride.accent ? "on" : ""}">Accent</button></div>
+    </div>`).join("");
+  $("#rideKbd").innerHTML = kbdHTML(rideTheme());
+  $("#wallRes").textContent = `${ride.screen.w} × ${ride.screen.h}`;
+  document.querySelectorAll("#wallStyle button").forEach((b) => b.classList.toggle("on", b.dataset.w === ride.style));
+  const q = new URLSearchParams({ style: ride.style, colors: wallColors().join(","), w: 840, v: ride.ver });
+  const src = "/api/photo/wallpaper-preview?" + q;
+  if ($("#wallPrev").dataset.src !== src) { $("#wallPrev").dataset.src = src; $("#wallPrev").src = src; }
+}
+function rideLoad(file) {
+  if (!file) return;
+  if (!/^image\/(png|jpeg|gif)$/.test(file.type)) { toast("Use a PNG, JPG or GIF photo"); return; }
+  if (file.size > 20 * 1024 * 1024) { toast("That file is over 20 MB"); return; }
+  const rd = new FileReader();
+  rd.onload = () => run(async () => {
+    $("#rideNote").textContent = "Reading the paint…";
+    let r;
+    try { r = await api("/api/photo/analyze", { data: rd.result }); }
+    catch (e) { $("#rideNote").textContent = e.message; throw e; }
+    const p = r.livery.palette, role = (x) => p.findIndex((s) => s.role === x);
+    ride = { res: r.livery, screen: r.screen, base: Math.max(0, role("base")), accent: role("accent"), third: role("third"),
+      style: (ride && ride.style) || "stripes", ver: Date.now(), autoName: "" };
+    $("#rideName").value = "";
+    $("#rideImg").src = rd.result; $("#rideImg").hidden = false; $("#rideDropText").hidden = true;
+    $("#rideNote").textContent = r.livery.note || "Not quite right? Pick another main or accent color below.";
+    renderRide();
+  });
+  rd.readAsDataURL(file);
+}
+$("#rideFile").addEventListener("change", (e) => { const f = e.target.files[0]; e.target.value = ""; rideLoad(f); });
+$("#rideDrop").addEventListener("dragover", (e) => { e.preventDefault(); $("#rideDrop").classList.add("over"); });
+$("#rideDrop").addEventListener("dragleave", () => $("#rideDrop").classList.remove("over"));
+$("#rideDrop").addEventListener("drop", (e) => { e.preventDefault(); $("#rideDrop").classList.remove("over"); rideLoad(e.dataTransfer.files[0]); });
+$("#ridePalette").addEventListener("click", (e) => {
+  const i = +e.target.dataset.i, r = e.target.dataset.r; if (!r || !ride) return;
+  if (r === "base") { if (ride.accent === i) ride.accent = ride.base; ride.base = i; }
+  else ride.accent = ride.accent === i ? -1 : (i === ride.base ? ride.accent : i); // click again: no accent
+  renderRide();
+});
+$("#wallStyle").addEventListener("click", (e) => { const w = e.target.dataset.w; if (!w || !ride) return; ride.style = w; renderRide(); });
+$("#wallPrev").addEventListener("error", () => { if (ride) $("#wallNote").textContent = "Couldn't draw the preview. Try adding the photo again."; });
+$("#ridePreview").addEventListener("click", () => run(async () => {
+  state = await api("/api/preview", rideTheme()); render(); toast("Previewing on your devices (not saved)");
+}));
+$("#rideSave").addEventListener("click", () => run(async () => {
+  state = await api("/api/themes/save", { theme: rideTheme(), apply: true }); render(); toast("Saved and applied");
+}));
+$("#rideEdit").addEventListener("click", () => {
+  if (!ride) return;
+  draft = rideTheme(); editingId = null;
+  $("#tName").value = draft.name; $("#editNote").textContent = "New livery from your photo";
+  renderEditor(); $("#tName").scrollIntoView({ behavior: "smooth", block: "center" });
+});
+function wallpaper(set) {
+  return run(async () => {
+    $("#wallNote").textContent = "Drawing it at full resolution…";
+    const r = await api("/api/photo/wallpaper", { style: ride.style, colors: wallColors(), name: $("#rideName").value.trim() || ride.autoName, set });
+    $("#wallNote").textContent = (set ? "On your desktop now. " : "") + `Saved as ${r.file} in ${r.folder}.`;
+    toast(set ? "Wallpaper set" : "Wallpaper saved");
+  });
+}
+$("#wallSet").addEventListener("click", () => wallpaper(true));
+$("#wallSave").addEventListener("click", () => wallpaper(false));
+$("#rideForget").addEventListener("click", () => run(async () => {
+  await api("/api/photo/forget", {});
+  ride = null; $("#rideImg").hidden = true; $("#rideImg").removeAttribute("src"); $("#rideDropText").hidden = false;
+  $("#rideNote").textContent = "Photo removed from this PC. Saved liveries and wallpapers are kept.";
+  renderRide();
 }));
 
 // --- actions --------------------------------------------------------------------
